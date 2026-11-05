@@ -1,0 +1,31 @@
+# 路径相对于仓库根目录，路径与任务匹配取并集。
+version: 1
+selection: union
+always:
+  - base
+profiles:
+  base:
+    file: AGENTS.md
+  go:
+    file: server/AGENTS.md
+    match_paths:
+      - server/**
+  react:
+    file: react-app/AGENTS.md
+    match_paths:
+      - react-app/**
+  uniapp:
+    file: uniapp/AGENTS.md
+    match_paths:
+      - uniapp/**
+  testing:
+    file: agent-rules/testing.md
+    when:
+      - 新增或修改业务行为、修复缺陷
+      - 编写或修改测试、测试辅助代码
+      - 选择回归范围或评估测试覆盖
+  maintenance:
+    file: agent-rules/maintaining-rules.md
+    when:
+      - 新增、修改或整理开发规范及规则索引
+      - 调整规范加载入口或跨文档引用
