@@ -1,0 +1,10 @@
+# 仅选择 filesystem 时叠加，S3 模式无需此文件和本地持久卷。
+services:
+  server:
+    environment:
+      STORAGE_PROVIDER: filesystem
+    volumes:
+      - objects:/data/objects
+
+volumes:
+  objects:

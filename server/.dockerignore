@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+.local
+tmp
+*.exe
+*.test
+*.out
+*.log
+wechat-miniprograms*.json
