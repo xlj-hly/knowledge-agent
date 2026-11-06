@@ -1,0 +1,31 @@
+.platform-account-summary {
+  padding: 27px 29px;
+}
+
+.platform-account-profile {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  padding-bottom: 27px;
+  margin-bottom: 25px;
+  border-bottom: 1px solid #f0f2f7;
+}
+
+.platform-account-profile h3 {
+  font-weight: 500;
+  font-size: 15px;
+  color: #65708a;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 1050px) {
+  .platform-account-summary {
+    max-width: 660px;
+  }
+}
+
+@media (max-width: 600px) {
+  .platform-account-summary {
+    padding: 23px;
+  }
+}

@@ -1,0 +1,146 @@
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 22px;
+  margin-bottom: 26px;
+}
+
+.metric-card {
+  padding: 21px 24px 23px;
+  border-radius: 10px;
+  border: 1px solid #ebedf4;
+  background: #fff;
+}
+
+.metric-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #8b96aa;
+  font-size: 11px;
+  margin-bottom: 11px;
+}
+
+.metric-icon {
+  background: #f2f4ff;
+  color: #8791d7;
+  width: 33px;
+  height: 33px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+}
+
+.metric-card > strong {
+  display: block;
+  color: #475570;
+  font-size: 23px;
+  line-height: 1.5;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.metric-card > p {
+  margin-top: 7px;
+  font-size: 10px;
+  color: #abb3c2;
+}
+
+.entity-icon {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  color: #8a96d1;
+  background: #f0f3ff;
+  border-radius: 9px;
+}
+
+.hostname {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: #8e98ac;
+  font-size: 11px;
+}
+
+.hostname svg {
+  color: #b0b8c9;
+}
+
+.registration-state {
+  font-size: 10px;
+  color: #a7afbf;
+}
+
+.registration-state.open {
+  color: #7383b3;
+}
+
+@media (max-width: 1250px) {
+.metric-grid {
+    gap: 15px;
+  }
+
+.metric-card {
+    padding: 18px;
+  }
+
+}
+@media (max-width: 1050px) {
+.metric-card > strong {
+    font-size: 19px;
+  }
+
+.metric-card > p {
+    line-height: 1.9;
+  }
+
+.metric-grid {
+    gap: 12px;
+  }
+
+}
+@media (max-width: 800px) {
+.metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+.metric-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: 15px 19px;
+  }
+
+.metric-top {
+    margin: 0;
+    gap: 10px;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+
+.metric-card > strong {
+    text-align: right;
+    font-size: 20px;
+  }
+
+.metric-card > p {
+    margin-left: 43px;
+    grid-column: 1 / -1;
+    margin-top: 1px;
+    font-size: 9px;
+  }
+
+.metric-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+}
+@media (max-width: 600px) {
+.metric-grid {
+    margin-bottom: 20px;
+  }
+
+}

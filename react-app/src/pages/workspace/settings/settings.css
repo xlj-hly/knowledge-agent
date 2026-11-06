@@ -1,0 +1,148 @@
+.settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(230px, 1fr);
+  gap: 30px;
+}
+
+.settings-panel {
+  padding: 29px;
+}
+
+.toggle-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  cursor: pointer;
+  position: relative;
+  border: 1px solid #e9edf7;
+  padding: 20px;
+  border-radius: 9px;
+  background: #fcfcff;
+}
+
+.toggle-card strong {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6a7792;
+}
+
+.toggle-card p {
+  font-size: 10px;
+  color: #a5aec2;
+  line-height: 1.9;
+  margin-top: 8px;
+}
+
+.toggle-card input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  right: 30px;
+}
+
+.toggle {
+  pointer-events: none;
+  margin-left: auto;
+  width: 34px;
+  height: 20px;
+  border-radius: 15px;
+  background: #d5dbea;
+  display: inline-block;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.toggle i {
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  transition: transform 0.15s;
+  box-shadow: 0 1px 3px #3035501a;
+}
+
+.toggle.on {
+  background: #7885de;
+}
+
+.toggle.on i {
+  transform: translateX(14px);
+}
+
+.toggle-card input:focus-visible + .toggle {
+  outline: 3px solid #a3adff;
+  outline-offset: 4px;
+}
+
+.settings-help {
+  color: #9ba8c4;
+  font-size: 11px;
+  padding: 15px 5px;
+}
+
+.settings-help > svg {
+  color: #a4b0d6;
+  margin-bottom: 15px;
+}
+
+.settings-help h3 {
+  font-weight: 500;
+  font-size: 13px;
+  color: #8796b4;
+  margin-bottom: 10px;
+}
+
+.settings-help p {
+  line-height: 2;
+  color: #a6b0c3;
+}
+
+.settings-help hr {
+  border: 0;
+  border-top: 1px solid #e7ebf3;
+  margin: 24px 0;
+}
+
+.settings-help h4 {
+  font-size: 10px;
+  font-weight: 400;
+  color: #a8b2c5;
+  margin: 17px 0 9px;
+}
+
+@media (max-width: 1050px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .settings-help {
+    max-width: 600px;
+  }
+
+  .settings-help hr,
+  .settings-help h4,
+  .settings-help > span {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .settings-panel {
+    padding: 23px;
+  }
+
+  .toggle-card {
+    gap: 10px;
+    padding: 16px;
+  }
+
+  .toggle-card p {
+    font-size: 9px;
+  }
+}

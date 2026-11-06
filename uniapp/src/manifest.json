@@ -1,5 +1,5 @@
 {
-    "name" : "",
+    "name" : "贝妮AI智能体",
     "appid" : "",
     "description" : "",
     "versionName" : "1.0.0",
@@ -50,7 +50,8 @@
     "quickapp" : {},
     /* 小程序特有相关 */
     "mp-weixin" : {
-        "appid" : "",
+        "appid" : "wx96746dd90374fde2",
+        "lazyCodeLoading" : "requiredComponents",
         "setting" : {
             "urlCheck" : false
         },
@@ -65,7 +66,7 @@
     "mp-toutiao" : {
         "usingComponents" : true
     },
-    "uniStatistics": {  
+    "uniStatistics": {
         "enable": false
     },
     "vueVersion" : "3"

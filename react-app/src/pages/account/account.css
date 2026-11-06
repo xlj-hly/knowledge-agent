@@ -1,0 +1,47 @@
+.account-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.account-panel {
+  padding: 27px 29px;
+}
+
+.profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  padding-bottom: 27px;
+  margin-bottom: 25px;
+  border-bottom: 1px solid #f0f2f7;
+}
+
+.profile-summary h3 {
+  font-weight: 500;
+  font-size: 15px;
+  color: #65708a;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 1050px) {
+.account-grid {
+    grid-template-columns: 1fr;
+  }
+
+.account-panel {
+    max-width: 660px;
+  }
+
+}
+@media (max-width: 600px) {
+.account-grid {
+    gap: 20px;
+  }
+
+.account-panel {
+    padding: 23px;
+  }
+
+}

@@ -28,3 +28,9 @@ go.work.sum
 .vscode/
 
 tmp
+.env
+.env.*
+!.env.example
+.local/
+wechat-miniprograms.json
+wechat-miniprograms.local.json
