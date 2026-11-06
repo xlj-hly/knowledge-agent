@@ -336,29 +336,6 @@
   justify-content: space-between;
 }
 
-.auth-card .auth-switch {
-  text-align: center;
-  margin-top: 25px;
-  font-size: 11px;
-}
-
-.auth-switch button {
-  background: transparent;
-  color: #8993d5;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  padding: 0 0 0 7px;
-}
-
-.auth-card .auth-help {
-  font-size: 10px;
-  text-align: center;
-  margin-top: 25px;
-  color: #aab2c3;
-}
-
 .auth-security {
   display: flex;
   align-items: center;

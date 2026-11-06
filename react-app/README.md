@@ -2,6 +2,8 @@
 
 React 19、TypeScript、Vite 8、React Router、Zustand 5。平台管理员与企业成员使用独立入口和会话。业务范围和 API 契约见 [SaaS 说明](../docs/saas.md)。
 
+Docker 使用 Node 构建静态文件、Nginx 提供页面与同域 API 转发，详见 [部署说明](../deploy/README.md)。
+
 ## 启动
 
 ```powershell
@@ -22,11 +24,11 @@ npm run dev -- --host 0.0.0.0
 
 | 地址 | 入口与权限 |
 | --- | --- |
-| `/login` | 企业成员登录与开放注册 |
+| `/login` | 企业成员登录 |
 | `/` | 企业工作台 |
 | `/account` | 企业成员个人资料、密码 |
 | `/members` | 企业管理员管理成员、角色、状态与密码 |
-| `/settings` | 企业管理员维护企业信息与注册开关 |
+| `/settings` | 企业管理员维护企业信息 |
 | `/platform/login` | 独立平台管理员登录 |
 | `/platform` | 平台工作台 |
 | `/platform/tenants` | 开通、维护企业，配置小程序，重置企业管理员密码 |
@@ -74,6 +76,6 @@ $env:SAAS_TEST_DATABASE_URL = 'postgres://用户:密码@localhost:测试端口/�
 npm run test:e2e
 ```
 
-测试启动端口 8081、5175、5176，平台入口使用 `platform.localhost:5175`，企业入口使用 `localhost:5175`。按本次运行标识确认 API 实例，在随机 schema 导入 `db/saas.sql` 并初始化测试身份，结束后清理。不会使用开发环境的 DATABASE_URL。需要 Go、两端前端依赖及空闲测试端口。流程覆盖平台开通、小程序配置保存与重新读取、密钥留空保留、企业配置隔离、域名入口隔离、成员管理、双端资料与改密、注册开关、停用恢复、会话撤销、路由直达与历史，以及同一标签页跨域名会话恢复、草稿清理和退出后刷新不恢复会话。小程序配置流程不调用真实微信上游。失败截图与 trace 保存在被 Git 忽略的 `test-results/`。
+测试启动端口 8081、5175、5176，平台入口使用 `platform.localhost:5175`，企业入口使用 `localhost:5175`。按本次运行标识确认 API 实例，在随机 schema 导入 `db/saas.sql` 并初始化测试身份，结束后清理。不会使用开发环境的 DATABASE_URL。需要 Go、两端前端依赖及空闲测试端口。流程覆盖平台开通、小程序配置保存与重新读取、密钥留空保留、企业配置隔离、域名入口隔离、管理员建号、双端资料与改密、企业信息保存、停用恢复、会话撤销、路由直达与历史，以及同一标签页跨域名会话恢复、草稿清理和退出后刷新不恢复会话。Web 与 H5 的密码登录入口只认证已有账号。小程序配置流程不调用真实微信上游。失败截图与 trace 保存在被 Git 忽略的 `test-results/`。
 
 生产将 `dist` 部署到 HTTPS 站点，业务路径回退到 `index.html`，`/api` 独立反向代理到 Go 服务且不走 SPA 回退；不要将后端秘密写入前端环境变量。

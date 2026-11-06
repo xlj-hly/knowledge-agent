@@ -51,11 +51,10 @@ type userView struct {
 }
 
 type tenantView struct {
-	ID                  string `json:"id"`
-	Name                string `json:"name"`
-	Hostname            string `json:"hostname"`
-	Status              string `json:"status"`
-	RegistrationEnabled bool   `json:"registration_enabled"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Hostname string `json:"hostname"`
+	Status   string `json:"status"`
 }
 
 type loginView struct {
@@ -472,34 +471,39 @@ func TestSaaSRejectsTenantAndRoleEscalationWithoutWrites(t *testing.T) {
 	s.login(t, "beta.test", "ordinary.user", memberPassword)
 }
 
-func TestSaaSRegistrationHasNoPrivilegeFieldsAndHonorsClosure(t *testing.T) {
+func TestSaaSAccountsAreCreatedByAdministrators(t *testing.T) {
 	s := newIntegrationSuite(t)
 	created := s.createTenant(t, "alpha.test")
 	admin := s.login(t, "alpha.test", "tenant.admin", adminPassword)
-	decodeSuccess[tenantView](t, s.request(http.MethodPatch, "alpha.test", "/api/admin/tenant", admin.Token, map[string]any{"registration_enabled": true}))
 	before := s.count(t, "SELECT count(*) FROM users")
-	for _, extra := range []map[string]any{{"role": "admin"}, {"tenant_id": created.Tenant.ID}, {"status": "active"}} {
-		body := map[string]any{"username": "injected.user", "password": memberPassword}
-		for key, value := range extra {
-			body[key] = value
+	if response := s.request(http.MethodPost, "alpha.test", "/api/auth/register", "", map[string]any{"username": "self.created", "password": memberPassword}); response.status != http.StatusNotFound {
+		t.Fatalf("密码自主注册接口仍可访问：HTTP %d", response.status)
+	}
+	assertFailure(t, s.request(http.MethodPatch, "alpha.test", "/api/admin/tenant", admin.Token, map[string]any{"registration_enabled": true}), http.StatusBadRequest)
+	assertFailure(t, s.request(http.MethodPatch, "platform.test", "/api/platform/tenants/"+created.Tenant.ID, s.platform.Token, map[string]any{"registration_enabled": true}), http.StatusBadRequest)
+	for _, response := range []apiResult{
+		s.request(http.MethodGet, "alpha.test", "/api/tenant", "", nil),
+		s.request(http.MethodGet, "alpha.test", "/api/auth/me", admin.Token, nil),
+		s.request(http.MethodGet, "platform.test", "/api/platform/tenants", s.platform.Token, nil),
+	} {
+		if response.status != http.StatusOK {
+			t.Fatalf("读取企业资料失败：HTTP %d", response.status)
 		}
-		assertFailure(t, s.request(http.MethodPost, "alpha.test", "/api/auth/register", "", body), http.StatusBadRequest)
+		if bytes.Contains(response.body, []byte(`"registration_enabled"`)) {
+			t.Fatalf("企业响应仍公开已删除的注册开关：%s", response.body)
+		}
 	}
 	if got := s.count(t, "SELECT count(*) FROM users"); got != before {
-		t.Fatal("rejected registration with server-owned fields created an account")
+		t.Fatal("已删除的自主注册入口创建了账号")
 	}
-	registered := decodeSuccess[loginView](t, s.request(http.MethodPost, "alpha.test", "/api/auth/register", "", map[string]any{
+	member := decodeSuccess[userView](t, s.request(http.MethodPost, "alpha.test", "/api/admin/users", admin.Token, map[string]any{
 		"username": "New.Member", "password": memberPassword, "nickname": "新成员",
 	}))
-	assertLogin(t, registered)
-	if registered.User.Role != "user" || registered.User.Username != "new.member" || registered.User.TenantID != created.Tenant.ID || registered.User.Nickname != "新成员" {
-		t.Fatalf("registration did not create an ordinary account in current tenant: %+v", registered.User)
+	if member.Role != "user" || member.Username != "new.member" || member.TenantID != created.Tenant.ID || member.Nickname != "新成员" {
+		t.Fatalf("管理员创建账号未落在当前企业的普通成员中：%+v", member)
 	}
-	assertFailure(t, s.request(http.MethodPost, "alpha.test", "/api/auth/register", "", map[string]any{"username": "NEW.MEMBER", "password": memberPassword}))
-	decodeSuccess[tenantView](t, s.request(http.MethodPatch, "alpha.test", "/api/admin/tenant", admin.Token, map[string]any{"registration_enabled": false}))
-	assertFailure(t, s.request(http.MethodPost, "alpha.test", "/api/auth/register", "", map[string]any{"username": "closed.user", "password": memberPassword}))
-	if got := s.count(t, "SELECT count(*) FROM users WHERE username = 'closed.user'"); got != 0 {
-		t.Fatal("closed registration still created an account")
+	if loggedIn := s.login(t, "alpha.test", "new.member", memberPassword); loggedIn.User.ID != member.ID {
+		t.Fatal("管理员创建的成员不能登录同一账号")
 	}
 	for _, body := range []map[string]any{
 		{"username": "ab", "password": memberPassword},

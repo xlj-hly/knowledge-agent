@@ -6,10 +6,10 @@
 
 - 一个企业对应一个 tenant，由访问域名识别；一个用户固定归属一家企业，不存在跨企业成员关系或切换企业。
 - 企业管理员与普通成员共用 `users`，角色为 `admin / user`。平台管理员使用独立的 `super_admin`，平台与企业令牌不能通用。
-- 平台负责开通企业及首位管理员、调整企业设置和启停、重置企业管理员密码。企业管理员负责成员管理及 Web 注册开关；开放注册只能创建普通成员。
+- 平台负责开通企业及首位管理员、调整企业设置和启停、重置企业管理员密码。企业管理员负责成员管理；Web 只提供账号密码登录，成员账号由管理员创建。
 - 企业必须至少保留一名正常管理员。开通企业与首位管理员在同一事务完成，并发降权或停用不能破坏此规则。
 - 用户可修改昵称、头像和密码，用户名不可修改，不提供物理删除入口。小程序提供微信头像选择与昵称填写能力，头像上传后持久保存。
-- 微信登录即登录／注册，首次自动创建本企业普通成员，不受 Web 自主注册开关影响；后续恢复同一成员，不增加强制完善资料步骤。
+- 微信登录即登录／注册，首次自动创建本企业普通成员；后续恢复同一成员，不增加强制完善资料步骤。
 - 微信身份按企业、AppID、OpenID 关联账号，不使用昵称或头像合并现有用户名账号。首次创建使用每账号独立随机初始密码，只保存散列；小程序设置页验证新微信 code 后可设置新密码，复登不覆盖密码。
 - 平台在企业管理中维护该企业的 AppID、AppSecret；配置直接保存在 `company.app_id / app_secret`，AppSecret 为数据库明文，运行时动态读取。没有独立配置表或微信启用开关，企业换域名保留配置。接口仅返回 AppID 与密钥是否已配置，不回传 AppSecret。
 - 停用、密码变更、密码重置或权限变化会撤销相应会话；重新启用不能恢复旧令牌。
@@ -89,7 +89,7 @@ React Router 管理 URL，导航、刷新、直接访问与浏览器前进后退
 
 | 路径 | 页面及权限 |
 | --- | --- |
-| `/login` | 企业账号登录与开放注册 |
+| `/login` | 企业账号登录 |
 | `/` | 企业工作台 |
 | `/account` | 企业成员个人账号 |
 | `/members` | 企业管理员的成员管理 |
@@ -111,13 +111,13 @@ React Router 管理 URL，导航、刷新、直接访问与浏览器前进后退
 - 用户名为 3–64 个 ASCII 字母、数字、下划线、点或横线，统一小写。密码按 UTF-8 校验 10–72 字节，不做 trim。昵称最多 64 个 Unicode 字符；头像为空、本用户已上传的受控相对路径或 HTTP(S) 地址，最多 2048 字节。
 - 状态为 `active / disabled`，角色为 `admin / user`。仅服务端可写密码散列和身份归属，公开响应不包含秘密。
 - 搜索分页为 `?q=&page=1&page_size=20`，page_size 最大 100。结果为 `{items:[],total:0,page:1,page_size:20}`。
-- 错误按无效输入 400、认证失效 401、权限不足或停用 403、记录不存在 404、业务冲突 409、限流 429、基础设施故障 500 区分。数据库故障不能当作账号失效。
+- 错误按无效输入 400、认证失效 401、权限不足或停用 403、记录不存在 404、业务冲突 409、基础设施故障 500 区分。数据库故障不能当作账号失效；微信上游错误另按微信接口契约映射。
 
 公开数据：
 
 | 类型 | 字段 |
 | --- | --- |
-| Tenant | `id,name,hostname,status,registration_enabled,created_at,updated_at` |
+| Tenant | `id,name,hostname,status,created_at,updated_at` |
 | User | `id,tenant_id,username,nickname,avatar_url,role,status,created_at,updated_at` |
 | PlatformAdmin | `id,username,created_at` |
 
@@ -129,7 +129,6 @@ React Router 管理 URL，导航、刷新、直接访问与浏览器前进后退
 | --- | --- | --- |
 | GET `/site` | 无需认证，按请求域名识别入口 | `{kind,hostname,tenant?}`，kind 为 platform / tenant / unknown |
 | GET `/tenant` | 无需认证 | Tenant |
-| POST `/auth/register` | username、password、可选 nickname；企业开放注册 | `{token,expires_at,user,tenant}` |
 | POST `/auth/login` | username、password | `{token,expires_at,user,tenant}` |
 | POST `/auth/wechat/login` | code；后端按企业配置向微信验证，首次自动注册 | `{token,expires_at,user,tenant}` |
 | GET `/auth/me` | 企业 Bearer | `{user,tenant}` |
@@ -143,7 +142,7 @@ React Router 管理 URL，导航、刷新、直接访问与浏览器前进后退
 | POST `/admin/users` | username、password，可选 nickname、role（缺省 user） | User |
 | PATCH `/admin/users/:id` | role、status 至少一项 | User |
 | POST `/admin/users/:id/reset-password` | new_password | `{ok:true}`，该账号全部会话失效 |
-| PATCH `/admin/tenant` | name、registration_enabled 至少一项 | Tenant |
+| PATCH `/admin/tenant` | name 必填 | Tenant |
 
 Web 与小程序均使用同一 PUT 资料接口，保存完整资料。企业管理的 PATCH 接口仅用于相应的部分字段更新。
 
@@ -161,7 +160,7 @@ Web 与小程序均使用同一 PUT 资料接口，保存完整资料。企业�
 | POST `/platform/account/password` | current_password、new_password | `{ok:true}`，平台账号全部会话失效 |
 | GET `/platform/tenants` | 分页搜索 | Tenant 列表 |
 | POST `/platform/tenants` | name、hostname、admin_username、admin_password | `{tenant,user}` |
-| PATCH `/platform/tenants/:id` | name、hostname、status、registration_enabled 至少一项 | Tenant |
+| PATCH `/platform/tenants/:id` | name、hostname、status 至少一项 | Tenant |
 | POST `/platform/tenants/:id/reset-admin-password` | username、new_password | `{ok:true}`，重置现有企业管理员并撤销会话 |
 | GET `/platform/tenants/:id/wechat` | 平台 Bearer | `{app_id,has_secret}`，不返回密钥 |
 | PUT `/platform/tenants/:id/wechat` | app_id、可选 app_secret；首次或换 AppID 必须提供密钥 | `{app_id,has_secret}` |
@@ -176,7 +175,7 @@ Web 与小程序均使用同一 PUT 资料接口，保存完整资料。企业�
 
 React 的 Zustand Store 拥有当前内存会话，通过 `persist` 与 `createJSONStorage` 只将令牌保存到当前标签页的 sessionStorage，平台与企业分别隔离。恢复数据按白名单校验，不能覆盖运行时动作；身份资料从后端重新确认，版本号、提示、表单和密码草稿不持久化。uniapp 客户端拥有令牌及存储，控制器拥有界面与草稿。身份改变会撤销旧请求归属并清空授权视图、资料与密码草稿；存储异常仍须完成内存状态失效并反馈原因。取消已发出的写入不能视为回滚，重新进入相关页面时读取服务端确认。
 
-后端自动加载本地 `server/.env`，已有系统环境变量优先；缺少 .env 时仍可仅使用系统环境变量启动。后端读取 `DATABASE_URL`，默认监听 `:8080`；平台管理员由 bootstrap 命令写入 `super_admin`，没有默认密码。本地 .env 和初始化凭据不提交到仓库。生产使用 HTTPS 及同域反向代理，跨域时显式设置 `ALLOWED_ORIGINS`。认证限流属于当前进程，多实例由网关提供共享限流。SQL 日志关闭，服务日志只保留操作和脱敏故障类别。
+后端自动加载本地 `server/.env`，已有系统环境变量优先；缺少 .env 时仍可仅使用系统环境变量启动。后端读取 `DATABASE_URL`，默认监听 `:8080`；平台管理员由 bootstrap 命令写入 `super_admin`，没有默认密码。本地 .env 和初始化凭据不提交到仓库。生产使用 HTTPS 及同域反向代理，跨域时显式设置 `ALLOWED_ORIGINS`。SQL 日志关闭，服务日志只保留操作和脱敏故障类别。
 
 安装、初始化与启动见 [服务端](../server/README.md)、[Web](../react-app/README.md)、[uniapp](../uniapp/README.md)。
 

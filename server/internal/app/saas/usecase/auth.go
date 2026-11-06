@@ -35,27 +35,6 @@ func (s *runtime) me(ctx context.Context, id dto.TenantIdentity) (out dto.Tenant
 	return
 }
 
-// Register 在允许注册的正常企业中创建普通成员并签发会话，两者原子完成。
-func (s *Auth) Register(ctx context.Context, id dto.TenantIdentity, in dto.RegisterInput) (out dto.TenantSession, err error) {
-	name, hash, err := prepareUser(in.Username, in.Password, in.Nickname, "user")
-	if err != nil {
-		return out, err
-	}
-	err = s.tenant(ctx, id, domain.Shared, domain.Shared, false, false, func(tx domain.Store, state tenantState) error {
-		if err := state.tenant.RequireRegistration(); err != nil {
-			return err
-		}
-		u, err := tx.CreateUser(state.tenant.ID, name, hash, in.Nickname, "user")
-		if err != nil {
-			return err
-		}
-		token, expires, err := s.issue(tx, "tenant", u.ID, state.tenant.ID)
-		out = dto.TenantSession{Token: token, ExpiresAt: expires, User: userDTO(u), Tenant: tenantDTO(state.tenant)}
-		return err
-	})
-	return
-}
-
 // Login 在锁外验证密码，再于企业和账号共享锁下复核凭据后签发会话。
 func (s *Auth) Login(ctx context.Context, id dto.TenantIdentity, in dto.LoginInput) (out dto.TenantSession, err error) {
 	name, err := domain.NormalizeUsername(in.Username)

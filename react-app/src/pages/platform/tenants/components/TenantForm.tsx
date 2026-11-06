@@ -19,7 +19,6 @@ export function TenantForm({
   const [name, setName] = useState(tenant?.name ?? '')
   const [hostname, setHostname] = useState(tenant?.hostname ?? '')
   const [status, setStatus] = useState<Status>(tenant?.status ?? 'active')
-  const [registration, setRegistration] = useState(tenant?.registration_enabled ?? false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [validation, setValidation] = useState('')
@@ -37,7 +36,6 @@ export function TenantForm({
             name: name.trim(),
             hostname: hostname.trim().toLowerCase(),
             status,
-            registration_enabled: registration,
           },
           signal,
         )
@@ -95,17 +93,6 @@ export function TenantForm({
                   <option value="disabled">停用 · 禁止所有成员访问</option>
                 </select>
               </Field>
-              <label className="checkbox-field">
-                <input
-                  type="checkbox"
-                  checked={registration}
-                  onChange={(event) => setRegistration(event.target.checked)}
-                />
-                <span>
-                  <strong>开放自主注册</strong>
-                  <small>允许访问该企业域名的用户自行创建成员账号。</small>
-                </span>
-              </label>
               {status === 'disabled' && (
                 <div className="notice warning">
                   <Icon name="alert" size={18} />

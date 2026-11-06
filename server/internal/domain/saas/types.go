@@ -7,13 +7,12 @@ import (
 
 // Tenant 表示企业及其生命周期状态。
 type Tenant struct {
-	ID                  string
-	Name                string
-	Hostname            string
-	Status              string
-	RegistrationEnabled bool
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	ID        string
+	Name      string
+	Hostname  string
+	Status    string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // User 表示归属单一企业的账号及其资料、角色和状态。

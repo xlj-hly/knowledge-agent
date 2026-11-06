@@ -10,7 +10,6 @@ CREATE TABLE company (
     name                  VARCHAR(128) NOT NULL,
     hostname              VARCHAR(253) NOT NULL,
     status                VARCHAR(16) NOT NULL DEFAULT 'active',
-    registration_enabled  BOOLEAN NOT NULL DEFAULT TRUE,
     app_id                VARCHAR(64) NOT NULL DEFAULT '',
     app_secret            VARCHAR(256) NOT NULL DEFAULT '',
     wechat_config_version BIGINT NOT NULL DEFAULT 0,
@@ -25,7 +24,6 @@ COMMENT ON COLUMN company.id IS '企业主键，由数据库生成';
 COMMENT ON COLUMN company.name IS '企业名称';
 COMMENT ON COLUMN company.hostname IS '企业访问域名，全局唯一；Go 规范为小写且去除端口，拒绝协议、路径及非法域名';
 COMMENT ON COLUMN company.status IS '企业状态：active 正常，disabled 停用；停用时由 Go 撤销全部企业会话';
-COMMENT ON COLUMN company.registration_enabled IS '是否允许企业内通过用户名密码自助注册；仅能注册普通用户，不影响微信首次登录自动注册';
 COMMENT ON COLUMN company.app_id IS '本企业微信小程序 AppID，由后台配置；空字符串表示尚未配置';
 COMMENT ON COLUMN company.app_secret IS '本企业微信小程序 AppSecret，直接保存；禁止公开响应或写入日志';
 COMMENT ON COLUMN company.wechat_config_version IS '配置变更时递增，微信验证提交前复核；未配置为 0';
@@ -59,7 +57,7 @@ COMMENT ON COLUMN users.password_hash IS '密码散列；微信首次创建使�
 COMMENT ON COLUMN users.nickname IS '可编辑昵称，空字符串表示未设置';
 COMMENT ON COLUMN users.avatar_url IS '已上传头像的受控相对地址或有效 HTTP(S) 地址，空字符串表示未设置';
 COMMENT ON COLUMN users.wechat_app_id IS '服务端核实的微信小程序 AppID；与 OpenID 一同识别微信身份，不公开';
-COMMENT ON COLUMN users.open_id IS '微信返回的 OpenID，按企业和小程序唯一；空字符串表示密码注册账号，不公开';
+COMMENT ON COLUMN users.open_id IS '微信返回的 OpenID，按企业和小程序唯一；空字符串表示未关联微信身份的账号，不公开';
 COMMENT ON COLUMN users.role IS '账号角色：user 普通成员，admin 企业管理员；由 Go 保证至少一名有效管理员';
 COMMENT ON COLUMN users.status IS '账号状态：active 正常，disabled 停用；取值与会话撤销由 Go 维护';
 COMMENT ON COLUMN users.created_at IS '创建时间，带时区';

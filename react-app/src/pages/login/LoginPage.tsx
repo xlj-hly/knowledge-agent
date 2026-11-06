@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 import { useAction } from '../../hooks/async'
 import type { Tenant } from '../../api/tenants/types'
 import { Brand, Icon, Field, ErrorNotice, SuccessNotice } from '../../components/ui'
-import { nicknameError, nicknameInput, passwordError, usernameInput } from '../../utils/account'
+import { usernameInput } from '../../utils/account'
 import './login.css'
 const currentYear = new Date().getFullYear()
 const hostname = window.location.hostname
@@ -26,24 +26,15 @@ export function LoginPage({
   sessionError?: string
   onLogin: (token: string) => void
 }) {
-  const [register, setRegister] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [nickname, setNickname] = useState('')
-  const [validation, setValidation] = useState('')
   const action = useAction()
-  const registrationOpen = !platform && tenant?.registration_enabled === true
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const error = register ? passwordError(password) || nicknameError(nickname) : ''
-    setValidation(error)
-    if (error) return
     void action.run(async (signal) => {
       const session = await (platform
         ? api.platformLogin({ username, password }, signal)
-        : register
-          ? api.register({ username, password, nickname }, signal)
-          : api.login({ username, password }, signal))
+        : api.login({ username, password }, signal))
       return session.token
     }, onLogin)
   }
@@ -121,12 +112,12 @@ export function LoginPage({
           <span className="eyebrow">
             {platform ? 'PLATFORM CONSOLE' : 'WELCOME TO YOUR WORKSPACE'}
           </span>
-          <h2>{platform ? '欢迎回到管理控制台' : register ? '加入你的企业' : '欢迎回来'}</h2>
+          <h2>{platform ? '欢迎回到管理控制台' : '欢迎回来'}</h2>
           <p>
             {platform
               ? '使用平台管理员账号登录，管理企业与访问权限。'
               : tenant
-                ? `${tenant.name} · ${register ? '创建账号，开始有序协作' : '登录你的企业协作空间'}`
+                ? `${tenant.name} · 登录你的企业协作空间`
                 : '正在连接你的企业空间'}
           </p>
           <SuccessNotice message={notice} />
@@ -146,59 +137,24 @@ export function LoginPage({
                   onChange={(event) => setUsername(event.target.value)}
                 />
               </Field>
-              {register && (
-                <Field label="昵称（可选）">
-                  <input
-                    name="nickname"
-                    autoComplete="nickname"
-                    {...nicknameInput}
-                    placeholder="团队成员如何称呼你"
-                    value={nickname}
-                    onChange={(event) => setNickname(event.target.value)}
-                  />
-                </Field>
-              )}
-              <Field
-                label="密码"
-                hint={register ? '10–72 字节，建议组合使用字母、数字和符号' : undefined}
-              >
+              <Field label="密码">
                 <input
                   name="password"
                   type="password"
-                  autoComplete={register ? 'new-password' : 'current-password'}
-                  placeholder={register ? '设置登录密码' : '请输入密码'}
+                  autoComplete="current-password"
+                  placeholder="请输入密码"
                   maxLength={72}
                   required
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                 />
               </Field>
-              <ErrorNotice message={validation || action.error} />
+              <ErrorNotice message={action.error} />
               <button className="button primary auth-submit" type="submit" disabled={action.busy}>
-                {action.busy ? '正在处理…' : register ? '创建账号并加入' : '登录工作空间'}
+                {action.busy ? '正在处理…' : '登录工作空间'}
                 {!action.busy && <Icon name="arrow" size={17} />}
               </button>
             </form>
-          )}
-          {registrationOpen && (
-            <p className="auth-switch">
-              {register ? '已有账号？' : '还没有账号？'}
-              <button
-                type="button"
-                onClick={() => {
-                  setRegister(!register)
-                  setPassword('')
-                  setValidation('')
-                }}
-                disabled={action.busy}
-              >
-                {register ? '返回登录' : '注册加入企业'}
-                <Icon name="arrow" size={14} />
-              </button>
-            </p>
-          )}
-          {!platform && tenant && !registrationOpen && (
-            <p className="auth-help">企业暂未开放自主注册，请联系管理员获取账号。</p>
           )}
           <div className="auth-security">
             <Icon name="shield" size={14} />

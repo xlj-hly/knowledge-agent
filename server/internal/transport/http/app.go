@@ -12,7 +12,7 @@ import (
 	"go-server/internal/domain/saas"
 )
 
-// Config 只保存 HTTP 适配层的跨域来源配置。
+// Config 保存 HTTP 适配层的跨域来源配置。
 type Config struct {
 	AllowedOrigins []string
 }
@@ -20,8 +20,7 @@ type Config struct {
 // New 使用已注入的业务用例组装路由，不拥有其依赖生命周期。
 func New(deps Dependencies, cfg Config) http.Handler {
 	r := gin.New()
-	// CORS 和安全头必须先于限流执行，保证预检与提前拒绝响应遵守同一契约。
-	r.Use(recoverRequest(), security(), cors(cfg.AllowedOrigins), authLimit(), platformEntry(deps.Sites))
+	r.Use(recoverRequest(), security(), cors(cfg.AllowedOrigins), platformEntry(deps.Sites))
 	registerSiteRoutes(r, deps.Sites, deps.Maintenance)
 	api := r.Group("/api")
 	registerAuthRoutes(api, deps.Auth)
@@ -135,7 +134,7 @@ func reply(c *gin.Context, data any, err error) {
 		case "wechat_rate_limited":
 			status = 429
 			c.Header("Retry-After", "60")
-		case "forbidden", "disabled", "registration_closed", "wechat_login_blocked":
+		case "forbidden", "disabled", "wechat_login_blocked":
 			status = 403
 		case "not_found":
 			status = 404

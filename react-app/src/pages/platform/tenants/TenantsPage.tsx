@@ -107,7 +107,6 @@ export function TenantsPage({ api }: { api: TenantsApi }) {
                       <th>企业名称</th>
                       <th>访问域名</th>
                       <th>状态</th>
-                      <th>自主注册</th>
                       <th>创建时间</th>
                       <th className="text-right">操作</th>
                     </tr>
@@ -134,13 +133,6 @@ export function TenantsPage({ api }: { api: TenantsApi }) {
                         </td>
                         <td>
                           <StatusBadge status={tenant.status} />
-                        </td>
-                        <td>
-                          <span
-                            className={`registration-state${tenant.registration_enabled ? ' open' : ''}`}
-                          >
-                            {tenant.registration_enabled ? '已开放' : '已关闭'}
-                          </span>
                         </td>
                         <td className="muted">
                           {new Date(tenant.created_at).toLocaleDateString('zh-CN')}

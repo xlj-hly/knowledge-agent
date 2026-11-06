@@ -104,9 +104,9 @@ func (s *Store) TenantByID(id string, lock domain.Lock) (domain.Tenant, error) {
 	return m.view(), checked("find tenant by ID", err)
 }
 
-// CreateTenant 创建正常企业并默认开放注册；调用方需在同一事务创建首个管理员。
+// CreateTenant 创建正常企业；调用方需在同一事务创建首个管理员。
 func (s *Store) CreateTenant(name, host string) (domain.Tenant, error) {
-	m := tenantModel{Name: name, Hostname: host, Status: "active", RegistrationEnabled: true}
+	m := tenantModel{Name: name, Hostname: host, Status: "active"}
 	err := s.db.Create(&m).Error
 	return m.view(), checked("create tenant", err)
 }
@@ -122,9 +122,6 @@ func (s *Store) UpdateTenant(id string, changes domain.CompanyChanges) (domain.T
 	}
 	if changes.Status != nil {
 		values["status"] = *changes.Status
-	}
-	if changes.RegistrationEnabled != nil {
-		values["registration_enabled"] = *changes.RegistrationEnabled
 	}
 	if err := s.db.Model(&tenantModel{}).Where("id = ?", id).Updates(values).Error; err != nil {
 		return domain.Tenant{}, checked("update tenant", err)

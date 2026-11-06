@@ -54,7 +54,7 @@ func (s *Companies) UpdateTenant(ctx context.Context, token, id string, in dto.U
 	if _, err := domain.ParseID(id); err != nil {
 		return out, err
 	}
-	changes, err := (domain.CompanyChanges{Name: in.Name, Hostname: in.Hostname, Status: in.Status, RegistrationEnabled: in.Registration}).Validated()
+	changes, err := (domain.CompanyChanges{Name: in.Name, Hostname: in.Hostname, Status: in.Status}).Validated()
 	if err != nil {
 		return out, err
 	}
@@ -112,9 +112,9 @@ func (s *Companies) ResetAdminPassword(ctx context.Context, token, id string, in
 	return dto.OK{OK: true}, err
 }
 
-// UpdateOwnTenant 仅允许企业管理员修改本企业名称与注册开关，不提供状态或域名变更。
+// UpdateOwnTenant 仅允许企业管理员修改本企业名称，不提供状态或域名变更。
 func (s *Companies) UpdateOwnTenant(ctx context.Context, id dto.TenantIdentity, in dto.UpdateOwnTenantInput) (out dto.Tenant, err error) {
-	changes, err := (domain.CompanyChanges{Name: in.Name, RegistrationEnabled: in.Registration}).Validated()
+	changes, err := (domain.CompanyChanges{Name: in.Name}).Validated()
 	if err != nil {
 		return out, err
 	}

@@ -65,30 +65,45 @@ func TestProfileRouteRejectsPatch(t *testing.T) {
 	}
 }
 
-func TestRateLimitRetainsCORSAndSecurityHeaders(t *testing.T) {
-	r := New(injectedDependencies(), Config{AllowedOrigins: []string{"https://app.alpha.test"}})
-	for i := 0; i < 31; i++ {
-		req := httptest.NewRequest(http.MethodPost, "/api/platform/auth/login", strings.NewReader(`null`))
+func TestAuthRequestsRemainIndependent(t *testing.T) {
+	r := New(injectedDependencies(), Config{})
+	for i := 0; i < 35; i++ {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(`null`))
 		req.RemoteAddr = "192.0.2.1:12345"
-		req.Header.Set("Origin", "https://app.alpha.test")
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
-		if i == 30 {
-			if w.Code != http.StatusTooManyRequests {
-				t.Fatalf("status=%d", w.Code)
-			}
-			if w.Header().Get("Access-Control-Allow-Origin") != "https://app.alpha.test" || w.Header().Get("X-Content-Type-Options") != "nosniff" {
-				t.Fatalf("rate limit lost headers: %v", w.Header())
-			}
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("重复登录请求未按输入校验处理：attempt=%d status=%d", i+1, w.Code)
 		}
+	}
+}
+
+func TestPasswordRegistrationRouteIsUnavailable(t *testing.T) {
+	r := New(injectedDependencies(), Config{})
+	req := httptest.NewRequest(http.MethodPost, "http://alpha.test/api/auth/register", strings.NewReader(`null`))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("密码自主注册接口仍可访问：HTTP %d", w.Code)
+	}
+}
+
+func TestRejectedRequestsRetainCORSAndSecurityHeaders(t *testing.T) {
+	r := New(injectedDependencies(), Config{AllowedOrigins: []string{"https://app.alpha.test"}})
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(`null`))
+	req.Header.Set("Origin", "https://app.alpha.test")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest || w.Header().Get("Access-Control-Allow-Origin") != "https://app.alpha.test" || w.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Fatalf("输入拒绝响应丢失跨域或安全头：status=%d headers=%v", w.Code, w.Header())
 	}
 	preflight := httptest.NewRequest(http.MethodOptions, "/api/platform/auth/login", nil)
 	preflight.RemoteAddr = "192.0.2.1:12345"
 	preflight.Header.Set("Origin", "https://app.alpha.test")
-	w := httptest.NewRecorder()
+	w = httptest.NewRecorder()
 	r.ServeHTTP(w, preflight)
 	if w.Code != http.StatusNoContent {
-		t.Fatalf("preflight counted as auth attempt: %d", w.Code)
+		t.Fatalf("preflight rejected: %d", w.Code)
 	}
 	if w.Header().Get("Access-Control-Allow-Origin") != "https://app.alpha.test" || w.Header().Get("X-Content-Type-Options") != "nosniff" {
 		t.Fatalf("preflight lost headers: %v", w.Header())

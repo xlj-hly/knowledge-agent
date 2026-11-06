@@ -7,13 +7,12 @@ import (
 
 // Tenant 表示企业及其生命周期状态。
 type Tenant struct {
-	ID                  string    `json:"id"`
-	Name                string    `json:"name"`
-	Hostname            string    `json:"hostname"`
-	Status              string    `json:"status"`
-	RegistrationEnabled bool      `json:"registration_enabled"`
-	CreatedAt           time.Time `json:"created_at"`
-	UpdatedAt           time.Time `json:"updated_at"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Hostname  string    `json:"hostname"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // User 表示归属单一企业的账号及其资料、角色和状态。

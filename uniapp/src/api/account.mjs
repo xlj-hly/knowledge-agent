@@ -1,6 +1,6 @@
 const isID = value => typeof value === 'string' && /^[1-9]\d*$/.test(value)
 const isTenant = tenant => tenant && isID(tenant.id) && typeof tenant.name === 'string'
-  && typeof tenant.hostname === 'string' && tenant.status === 'active' && typeof tenant.registration_enabled === 'boolean'
+  && typeof tenant.hostname === 'string' && tenant.status === 'active'
 const isUser = user => user && isID(user.id) && isID(user.tenant_id) && typeof user.username === 'string'
   && typeof user.nickname === 'string' && typeof user.avatar_url === 'string'
   && ['admin', 'user'].includes(user.role) && user.status === 'active'
@@ -29,9 +29,6 @@ export function createAccountApi(client) {
     },
     async wechatLogin(code, tenant) {
       return validateAccount(await client.request('/auth/wechat/login', { method: 'POST', data: { code }, authenticated: false }), tenant)
-    },
-    async register(data, tenant) {
-      return validateAccount(await client.request('/auth/register', { method: 'POST', data, authenticated: false }), tenant)
     },
     async updateProfile(data, identity) {
       const user = await client.request('/account/profile', { method: 'PUT', data })

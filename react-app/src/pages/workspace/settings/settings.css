@@ -8,77 +8,6 @@
   padding: 29px;
 }
 
-.toggle-card {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  cursor: pointer;
-  position: relative;
-  border: 1px solid #e9edf7;
-  padding: 20px;
-  border-radius: 9px;
-  background: #fcfcff;
-}
-
-.toggle-card strong {
-  font-size: 12px;
-  font-weight: 500;
-  color: #6a7792;
-}
-
-.toggle-card p {
-  font-size: 10px;
-  color: #a5aec2;
-  line-height: 1.9;
-  margin-top: 8px;
-}
-
-.toggle-card input {
-  position: absolute;
-  opacity: 0;
-  width: 1px;
-  height: 1px;
-  right: 30px;
-}
-
-.toggle {
-  pointer-events: none;
-  margin-left: auto;
-  width: 34px;
-  height: 20px;
-  border-radius: 15px;
-  background: #d5dbea;
-  display: inline-block;
-  flex-shrink: 0;
-  position: relative;
-  transition: background 0.15s;
-}
-
-.toggle i {
-  width: 14px;
-  height: 14px;
-  background: #fff;
-  border-radius: 50%;
-  position: absolute;
-  left: 3px;
-  top: 3px;
-  transition: transform 0.15s;
-  box-shadow: 0 1px 3px #3035501a;
-}
-
-.toggle.on {
-  background: #7885de;
-}
-
-.toggle.on i {
-  transform: translateX(14px);
-}
-
-.toggle-card input:focus-visible + .toggle {
-  outline: 3px solid #a3adff;
-  outline-offset: 4px;
-}
-
 .settings-help {
   color: #9ba8c4;
   font-size: 11px;
@@ -137,12 +66,4 @@
     padding: 23px;
   }
 
-  .toggle-card {
-    gap: 10px;
-    padding: 16px;
-  }
-
-  .toggle-card p {
-    font-size: 9px;
-  }
 }

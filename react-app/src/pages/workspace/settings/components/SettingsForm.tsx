@@ -15,7 +15,6 @@ export function SettingsForm({
   onUpdated: (tenant: Tenant) => void
 }) {
   const [name, setName] = useState(tenant.name)
-  const [registration, setRegistration] = useState(tenant.registration_enabled)
   const [validation, setValidation] = useState('')
   const [success, setSuccess] = useState('')
   const action = useAction()
@@ -29,7 +28,7 @@ export function SettingsForm({
     setValidation('')
     void action.run(
       (signal) =>
-        api.updateTenant({ name: name.trim(), registration_enabled: registration }, signal),
+        api.updateTenant({ name: name.trim() }, signal),
       (next) => {
         onUpdated(next)
         setSuccess('企业设置已保存。')
@@ -41,7 +40,7 @@ export function SettingsForm({
       <PageHeader
         eyebrow="WORKSPACE SETTINGS"
         title="企业设置"
-        description="维护企业信息，设定适合团队的成员加入方式。"
+        description="维护企业名称与基本信息。"
       />
       <div className="settings-layout">
         <section className="panel settings-panel">
@@ -62,25 +61,6 @@ export function SettingsForm({
               <Field label="企业访问域名" hint="如需变更访问域名，请联系平台管理员。">
                 <input value={tenant.hostname} disabled />
               </Field>
-              <div className="form-divider">
-                <span>成员加入方式</span>
-              </div>
-              <label className="toggle-card">
-                <div>
-                  <strong>开放自主注册</strong>
-                  <p>允许访问企业域名的用户自行注册，加入后默认为普通成员。</p>
-                </div>
-                <input
-                  type="checkbox"
-                  role="switch"
-                  aria-label="开放自主注册"
-                  checked={registration}
-                  onChange={(event) => setRegistration(event.target.checked)}
-                />
-                <span className={`toggle${registration ? ' on' : ''}`} aria-hidden="true">
-                  <i />
-                </span>
-              </label>
             </fieldset>
             <ErrorNotice message={validation || action.error} />
             <SuccessNotice message={success} />
@@ -94,8 +74,8 @@ export function SettingsForm({
         <aside className="settings-aside">
           <div className="settings-help">
             <Icon name="shield" size={25} />
-            <h3>为团队设定清晰的边界</h3>
-            <p>关闭自主注册后，已有成员仍可正常登录；新成员需要由企业管理员创建账号。</p>
+            <h3>维护企业基本信息</h3>
+            <p>企业名称展示给团队成员。如需调整访问域名，请联系平台管理员。</p>
             <hr />
             <h4>企业标识</h4>
             <span className="mono">{tenant.id}</span>

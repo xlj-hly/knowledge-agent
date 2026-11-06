@@ -10,13 +10,6 @@ type LoginInput struct {
 	Password string `json:"password"`
 }
 
-// RegisterInput 仅允许自助注册普通成员，企业和角色由服务确定。
-type RegisterInput struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Nickname string `json:"nickname"`
-}
-
 // CreateUserInput 由企业管理员创建账号；未指定 Role 时默认为 user。
 type CreateUserInput struct {
 	Username string `json:"username"`
@@ -48,10 +41,9 @@ type UpdateUserInput struct {
 	Status *string `json:"status"`
 }
 
-// UpdateOwnTenantInput 仅允许企业管理员更新名称与注册开关，nil 表示保留。
+// UpdateOwnTenantInput 仅允许企业管理员更新企业名称，nil 表示保留。
 type UpdateOwnTenantInput struct {
-	Name         *string `json:"name"`
-	Registration *bool   `json:"registration_enabled"`
+	Name *string `json:"name"`
 }
 
 // CreateTenantInput 携带企业与首个管理员资料，两者必须在同一事务内创建。
@@ -64,10 +56,9 @@ type CreateTenantInput struct {
 
 // UpdateTenantInput 供平台更新企业；nil 保留原值，停用或变更域名会撤销企业会话。
 type UpdateTenantInput struct {
-	Name         *string `json:"name"`
-	Hostname     *string `json:"hostname"`
-	Status       *string `json:"status"`
-	Registration *bool   `json:"registration_enabled"`
+	Name     *string `json:"name"`
+	Hostname *string `json:"hostname"`
+	Status   *string `json:"status"`
 }
 
 // ResetAdminPasswordInput 按用户名定位现有企业管理员，不能借此新建或提升账号权限。

@@ -1,7 +1,7 @@
 import { validateCredentials, validateProfile, validatePasswordChange } from './validation.mjs'
 import { createAccountApi } from '../../api/account.mjs'
 
-const credentials = () => ({ username: '', password: '', nickname: '' })
+const credentials = () => ({ username: '', password: '' })
 const profile = () => ({ nickname: '', avatar_url: '' })
 const passwords = () => ({ current_password: '', new_password: '', confirmation: '' })
 
@@ -102,7 +102,7 @@ export function createAccountController({ state, client, wechat = null }) {
         acceptAccount(account)
       } else {
         state.user = null
-        state.screen = state.screen === 'register' && tenant.registration_enabled ? 'register' : 'login'
+        state.screen = 'login'
       }
       state.ready = true
     } catch (error) {
@@ -167,30 +167,14 @@ export function createAccountController({ state, client, wechat = null }) {
 
   function submitCredentials() {
     if (state.busy || !state.ready) return
-    const registering = state.screen === 'register'
-    state.error = validateCredentials(state.credentials, registering)
+    state.error = validateCredentials(state.credentials)
     if (state.error) return
-    if (registering && !state.tenant.registration_enabled) {
-      state.error = '本企业已关闭注册，请联系企业管理员。'
-      return
-    }
     const data = {
       username: state.credentials.username.trim().toLowerCase(), password: state.credentials.password,
-      ...(registering ? { nickname: state.credentials.nickname.trim() } : {}),
     }
-    return perform(async () => {
-      const operationGeneration = generation
-      if (registering) {
-        const tenant = await api.getTenant()
-        if (operationGeneration !== generation) throw Object.assign(new Error('请求已取消'), { code: 'CANCELLED' })
-        state.tenant = tenant
-        if (!tenant.registration_enabled) throw new Error('本企业已关闭注册，请联系企业管理员。')
-      }
-      return registering ? api.register(data, state.tenant) : api.login(data, state.tenant)
-    }, result => {
+    return perform(() => api.login(data, state.tenant), result => {
       client.saveSession(result)
       acceptAccount(result)
-      state.notice = registering ? '账号创建成功，欢迎加入。' : ''
     })
   }
 

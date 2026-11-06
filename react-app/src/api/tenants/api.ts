@@ -12,7 +12,7 @@ export function createTenantsApi(request: Request) {
       request(`/platform/tenants/${encodeURIComponent(tenantId)}/wechat`, decodeWechatConfiguration, 'GET', undefined, signal),
     saveTenantWechat: (tenantId: string, body: WechatConfigurationUpdate, signal?: AbortSignal) =>
       request(`/platform/tenants/${encodeURIComponent(tenantId)}/wechat`, decodeWechatConfiguration, 'PUT', body, signal),
-    updateTenant: (body: { name: string; registration_enabled: boolean }, signal?: AbortSignal) =>
+    updateTenant: (body: { name: string }, signal?: AbortSignal) =>
       request('/admin/tenant', decodeTenant, 'PATCH', body, signal),
     tenants: (q: string, page: number, signal?: AbortSignal) =>
       request(

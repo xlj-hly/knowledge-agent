@@ -4,7 +4,6 @@ import "github.com/gin-gonic/gin"
 
 func registerAuthRoutes(api *gin.RouterGroup, auth AuthUseCases) {
 	api.GET("/tenant", tenantRead(auth.Tenant))
-	api.POST("/auth/register", tenantInput(auth.Register))
 	api.POST("/auth/login", tenantInput(auth.Login))
 	api.POST("/auth/wechat/login", tenantInput(auth.WeChatLogin))
 	api.GET("/auth/me", tenantRead(auth.Me))

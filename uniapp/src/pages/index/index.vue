@@ -15,8 +15,8 @@
       <button v-if="!account.loading" class="primary" @click="retry">重新连接</button>
     </view>
     <WechatLogin v-else-if="!account.user && wechatLogin" :tenant="account.tenant" :busy="account.busy" @login="controller.loginWithWechat" />
-    <AuthForm v-else-if="!account.user" :tenant="account.tenant" :screen="account.screen" :busy="account.busy" :draft="account.credentials"
-      @screen="controller.switchScreen" @submit="controller.submitCredentials" @update="controller.updateCredentials" />
+    <AuthForm v-else-if="!account.user" :busy="account.busy" :draft="account.credentials"
+      @submit="controller.submitCredentials" @update="controller.updateCredentials" />
     <AccountHome v-else-if="account.screen === 'home'" :user="account.user" :tenant="account.tenant" :busy="account.busy" :avatar-failed="account.avatarFailed"
       :avatar-url="controller.avatarURL(account.user.avatar_url)"
       @profile="controller.openProfile" @password="controller.switchScreen('password')" @logout="controller.logout" @avatar-error="controller.avatarError" />

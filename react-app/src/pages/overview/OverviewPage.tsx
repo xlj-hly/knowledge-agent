@@ -84,10 +84,6 @@ export function OverviewPage({
                     <StatusBadge status={tenant.status} />
                   </dd>
                 </div>
-                <div>
-                  <dt>自主注册</dt>
-                  <dd>{tenant.registration_enabled ? '已开放' : '已关闭'}</dd>
-                </div>
               </>
             )}
             <div>
@@ -121,7 +117,7 @@ export function OverviewPage({
                 <QuickLink
                   icon="settings"
                   title="企业设置"
-                  description="更新企业信息与自主注册设置"
+                  description="更新企业基本信息"
                   to={pagePath(platform, 'settings')}
                 />
               </>

@@ -151,15 +151,12 @@ func TestSaaSWeChatRegistrationAndFailureBoundaries(t *testing.T) {
 	}
 	assertFailure(t, s.request(http.MethodPost, "alpha.test", "/api/auth/wechat/login", "", map[string]any{"code": "valid", "openid": "forged"}), 400)
 	assertFailure(t, s.request(http.MethodPost, "alpha.test", "/api/auth/wechat/login", "", map[string]any{"code": "contains spaces"}), 400)
-	decodeSuccess[tenantView](t, s.request(http.MethodPatch, "platform.test", "/api/platform/tenants/"+alpha.Tenant.ID, s.platform.Token, map[string]any{"registration_enabled": false}))
 	first := wechatLogin(t, s, "alpha.test", "new_person")
 	if s.count(t, "SELECT count(*) FROM users") != 2 || s.count(t, "SELECT count(*) FROM users WHERE open_id<>''") != 1 {
-		t.Fatal("WeChat first login was incorrectly blocked by password registration setting")
+		t.Fatal("微信首次登录未创建唯一的企业普通成员")
 	}
-	decodeSuccess[tenantView](t, s.request(http.MethodPatch, "platform.test", "/api/platform/tenants/"+alpha.Tenant.ID, s.platform.Token, map[string]any{"registration_enabled": true}))
-	decodeSuccess[tenantView](t, s.request(http.MethodPatch, "platform.test", "/api/platform/tenants/"+alpha.Tenant.ID, s.platform.Token, map[string]any{"registration_enabled": false}))
 	if repeat := wechatLogin(t, s, "alpha.test", "new_person"); repeat.User.ID != first.User.ID {
-		t.Fatal("registration closure blocked existing member")
+		t.Fatal("微信重复登录未复用已有成员")
 	}
 	decodeSuccess[tenantView](t, s.request(http.MethodPatch, "platform.test", "/api/platform/tenants/"+alpha.Tenant.ID, s.platform.Token, map[string]any{"status": "disabled"}))
 	assertWeChatError(t, s.request(http.MethodPost, "alpha.test", "/api/auth/wechat/login", "", map[string]any{"code": "new_person"}), 403, "disabled")

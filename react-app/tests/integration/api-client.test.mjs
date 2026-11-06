@@ -9,7 +9,6 @@ const tenant = {
   name: '测试企业',
   hostname: 'acme.test',
   status: 'active',
-  registration_enabled: true,
   created_at: '2026-11-05T00:00:00Z',
   updated_at: '2026-11-05T00:00:00Z',
 }
@@ -105,19 +104,18 @@ test('登录失败保留服务端业务说明，网络异常给出可重试提�
   const baseUrl = await serve(t, (_request, response) => {
     response.writeHead(403)
     response.end(
-      JSON.stringify({ error: { code: 'registration_closed', message: '企业已关闭自主注册' } }),
+      JSON.stringify({ error: { code: 'disabled', message: '企业或账号已停用' } }),
     )
   })
   await assert.rejects(
-    createApi({ baseUrl }).register({
+    createApi({ baseUrl }).login({
       username: 'alice',
       password: 'example-password',
-      nickname: '',
     }),
     (error) =>
       error instanceof ApiError &&
-      error.code === 'registration_closed' &&
-      error.message === '企业已关闭自主注册',
+      error.code === 'disabled' &&
+      error.message === '企业或账号已停用',
   )
   await assert.rejects(
     createApi({ baseUrl: 'http://127.0.0.1:1/api' }).site(),

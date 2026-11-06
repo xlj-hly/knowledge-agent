@@ -15,7 +15,6 @@ export function decodeTenant(value: unknown): Tenant {
     name: string(row.name),
     hostname: string(row.hostname),
     status: status(row.status),
-    registration_enabled: bool(row.registration_enabled),
     created_at: string(row.created_at),
     updated_at: string(row.updated_at),
   }

@@ -12,7 +12,6 @@ import (
 type tenantModel struct {
 	ID                     int64 `gorm:"primaryKey"`
 	Name, Hostname, Status string
-	RegistrationEnabled    bool
 	AppID, AppSecret       string
 	WeChatConfigVersion    int64 `gorm:"column:wechat_config_version"`
 	CreatedAt, UpdatedAt   time.Time
@@ -20,7 +19,7 @@ type tenantModel struct {
 
 func (tenantModel) TableName() string { return "company" }
 func (m tenantModel) view() domain.Tenant {
-	return domain.Tenant{ID: strconv.FormatInt(m.ID, 10), Name: m.Name, Hostname: m.Hostname, Status: m.Status, RegistrationEnabled: m.RegistrationEnabled, CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt}
+	return domain.Tenant{ID: strconv.FormatInt(m.ID, 10), Name: m.Name, Hostname: m.Hostname, Status: m.Status, CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt}
 }
 
 type userModel struct {

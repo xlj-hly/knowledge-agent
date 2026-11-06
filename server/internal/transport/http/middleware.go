@@ -2,11 +2,8 @@ package httpapi
 
 import (
 	"io"
-	"net"
 	"net/http"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"go-server/internal/domain/saas"
@@ -59,45 +56,6 @@ func cors(origins []string) gin.HandlerFunc {
 				c.AbortWithStatus(http.StatusForbidden)
 			}
 			return
-		}
-		c.Next()
-	}
-}
-
-type attempt struct {
-	count int
-	until time.Time
-}
-
-func authLimit() gin.HandlerFunc {
-	var mu sync.Mutex
-	buckets := make(map[string]attempt)
-	return func(c *gin.Context) {
-		r := c.Request
-		if strings.HasSuffix(r.URL.Path, "/login") || r.URL.Path == "/api/auth/register" {
-			now := time.Now()
-			key, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				key = r.RemoteAddr
-			}
-			mu.Lock()
-			for k, v := range buckets {
-				if now.After(v.until) {
-					delete(buckets, k)
-				}
-			}
-			b := buckets[key]
-			if now.After(b.until) {
-				b = attempt{until: now.Add(time.Minute)}
-			}
-			b.count++
-			buckets[key] = b
-			mu.Unlock()
-			if b.count > 30 {
-				c.Header("Retry-After", "60")
-				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": gin.H{"code": "rate_limited", "message": "尝试过于频繁，请稍后重试"}})
-				return
-			}
 		}
 		c.Next()
 	}

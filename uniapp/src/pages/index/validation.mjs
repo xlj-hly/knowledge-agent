@@ -14,9 +14,9 @@ function nicknameError(nickname) {
   return Array.from(nickname || '').length > 64 ? '昵称最多 64 个字符。' : ''
 }
 
-export function validateCredentials({ username, password, nickname }, registering = false) {
+export function validateCredentials({ username, password }) {
   if (!/^[a-z0-9_.-]{3,64}$/i.test((username || '').trim())) return '用户名需为 3–64 个英文字母、数字、下划线、点或横线。'
-  return passwordError(password) || (registering ? nicknameError(nickname) : '')
+  return passwordError(password)
 }
 
 export function validateProfile({ nickname, avatar_url }) {

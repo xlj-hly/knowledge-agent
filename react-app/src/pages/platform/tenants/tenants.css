@@ -68,15 +68,6 @@
   color: #b0b8c9;
 }
 
-.registration-state {
-  font-size: 10px;
-  color: #a7afbf;
-}
-
-.registration-state.open {
-  color: #7383b3;
-}
-
 @media (max-width: 1250px) {
 .metric-grid {
     gap: 15px;

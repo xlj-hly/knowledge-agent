@@ -81,7 +81,7 @@ func revalidateWeChat(tx domain.Store, tenantID string, snapshot verifiedWeChat)
 	return nil
 }
 
-// WeChatLogin 将微信凭据换为企业会话；首次创建普通成员，微信入口不受密码注册开关影响。
+// WeChatLogin 将微信凭据换为企业会话；首次创建本企业普通成员，后续复用同一账号。
 func (s *Auth) WeChatLogin(ctx context.Context, id dto.TenantIdentity, in dto.WeChatLoginInput) (out dto.TenantSession, err error) {
 	snapshot, err := s.verifyWeChat(ctx, id.Hostname, in.Code)
 	if err != nil {

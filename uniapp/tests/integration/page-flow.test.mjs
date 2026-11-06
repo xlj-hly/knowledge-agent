@@ -5,7 +5,7 @@ import { createTenantClient } from '../../src/api/request.mjs'
 import { createAccountController, createAccountState } from '../../src/pages/index/state.mjs'
 import IndexPage from '../../src/pages/index/index.vue'
 
-const tenant = { id: '2', hostname: 'acme.test', name: '示例企业', registration_enabled: true, status: 'active' }
+const tenant = { id: '2', hostname: 'acme.test', name: '示例企业', status: 'active' }
 const user = { id: '7', username: 'alice', nickname: '原昵称', avatar_url: '', role: 'user', tenant_id: '2', status: 'active' }
 const wrappers = []
 afterEach(() => {
@@ -106,15 +106,16 @@ function authenticated(context) {
   context.state.screen = 'home'
 }
 
-test('registration cancelled after tenant resolution never submits or restores a login', async () => {
+test('password login has no registration entry and a cancelled response cannot restore a session', async () => {
   const context = setup()
-  await click(context.wrapper, '注册账号')
+  expect(context.wrapper.text()).not.toContain('注册')
   await input(context.wrapper, '#username', 'Alice')
   await input(context.wrapper, '#password', 'strongpassword1')
-  await input(context.wrapper, '#register-nickname', '小林')
-  await click(context.wrapper, '注册并登录')
-  context.respond(0, tenant)
+  await click(context.wrapper, '登录')
+  expect(context.requests[0].url).toBe('/api/auth/login')
+  expect(context.requests[0].data).toEqual({ username: 'alice', password: 'strongpassword1' })
   context.controller.cancelPending()
+  context.respond(0, { user, tenant, token: 'token-a', expires_at: '2099-01-01T00:00:00Z' })
   await flushPromises()
   expect(context.requests).toHaveLength(1)
   expect(context.state.user).toBeNull()
@@ -222,7 +223,7 @@ test('expired session clears every draft even when storage removal fails', async
   const context = setup()
   authenticated(context)
   context.state.profile.nickname = '私密草稿'
-  context.state.credentials.nickname = '上个账号'
+  context.state.credentials.username = 'previous.user'
   context.state.passwords.new_password = 'secretpassword'
   context.client.saveSession({ token: 'expired', expires_at: '2027-01-01T00:00:00Z', tenant })
   vi.setSystemTime(new Date('2028-01-01T00:00:00Z'))
@@ -230,7 +231,7 @@ test('expired session clears every draft even when storage removal fails', async
   const refresh = context.controller.refresh()
   expect(context.state.user).toBeNull()
   expect(context.state.profile.nickname).toBe('')
-  expect(context.state.credentials.nickname).toBe('')
+  expect(context.state.credentials.username).toBe('')
   expect(context.state.passwords.new_password).toBe('')
   context.respond(0, tenant)
   await refresh
@@ -290,7 +291,7 @@ test.each([
   { user: { ...user, id: 7 }, tenant },
   { user, tenant: { ...tenant, id: 2 } },
   { user: { ...user, tenant_id: '99' }, tenant },
-  { user, tenant: { ...tenant, registration_enabled: null } },
+  { user, tenant: { ...tenant, hostname: null } },
 ])('invalid login identity is rejected before persistence or authorized rendering: %j', async account => {
   const context = setup()
   await input(context.wrapper, '#username', 'Alice')
@@ -425,13 +426,13 @@ test('WeChat page exchanges a fresh platform code and persists only the SaaS ses
   context.lifecycle.unload()
 })
 
-test('WeChat login registers without a separate registration gate and exposes password settings', async () => {
-  const context = await setupPage({ wechat: true, session: false, tenantValue: { ...tenant, registration_enabled: false } })
+test('WeChat login accepts the company contract and exposes password settings', async () => {
+  const context = await setupPage({ wechat: true, session: false })
   expect(context.wrapper.text()).not.toContain('未开放')
   await click(context.wrapper, '微信登录')
   context.logins[0].success({ code: 'fresh-code' })
   await flushPromises()
-  context.respond(1, { user, tenant: { ...tenant, registration_enabled: false }, token: 'token-a', expires_at: '2099-01-01T00:00:00Z' })
+  context.respond(1, { user, tenant, token: 'token-a', expires_at: '2099-01-01T00:00:00Z' })
   await flushPromises()
   await click(context.wrapper, '修改登录密码')
   expect(context.wrapper.find('#current-password').exists()).toBe(false)

@@ -10,7 +10,7 @@ func userDTO(u domain.User) dto.User {
 }
 
 func tenantDTO(t domain.Tenant) dto.Tenant {
-	return dto.Tenant{ID: t.ID, Name: t.Name, Hostname: t.Hostname, Status: t.Status, RegistrationEnabled: t.RegistrationEnabled, CreatedAt: t.CreatedAt, UpdatedAt: t.UpdatedAt}
+	return dto.Tenant{ID: t.ID, Name: t.Name, Hostname: t.Hostname, Status: t.Status, CreatedAt: t.CreatedAt, UpdatedAt: t.UpdatedAt}
 }
 
 func adminDTO(a domain.PlatformAdmin) dto.PlatformAdmin {

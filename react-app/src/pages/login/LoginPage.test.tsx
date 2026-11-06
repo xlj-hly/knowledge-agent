@@ -29,6 +29,8 @@ test('登录失败后可更正并进入域名对应企业', async () => {
   const api = createAuthApi(createRequest({}))
   const login = vi.fn()
   render(<MemoryRouter><LoginPage api={api} tenant={tenant} platform={false} homePath="/" notice="" onLogin={login} /></MemoryRouter>)
+  expect(screen.queryByRole('button', { name: '注册加入企业' })).toBeNull()
+  expect(screen.queryByLabelText('昵称（可选）')).toBeNull()
   fireEvent.change(await screen.findByLabelText('用户名'), { target: { value: 'alice' } })
   fireEvent.change(screen.getByLabelText('密码'), { target: { value: 'wrong-password' } })
   fireEvent.click(screen.getByRole('button', { name: '登录工作空间' }))

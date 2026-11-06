@@ -4,7 +4,7 @@
 
 | 表 | 用途 |
 | --- | --- |
-| `company` | 企业名称、访问域名、状态、Web 注册开关，以及本企业 AppID、明文 AppSecret 和微信配置版本 |
+| `company` | 企业名称、访问域名、状态，以及本企业 AppID、明文 AppSecret 和微信配置版本 |
 | `users` | 固定归属一家企业的成员及企业管理员；微信 AppID 与 OpenID 直接保存在用户行中 |
 | `super_admin` | 独立于企业的平台主管理账号 |
 | `auth_sessions` | 企业和平台两种身份的登录会话及访问令牌摘要 |
@@ -26,7 +26,6 @@ erDiagram
         varchar name "企业名称"
         varchar hostname UK "全局唯一访问域名"
         varchar status "active 正常或 disabled 停用"
-        boolean registration_enabled "是否允许Web密码注册，不影响微信建号"
         varchar app_id "企业小程序 AppID，未配置时为空"
         varchar app_secret "AppSecret 明文，仅服务端使用，不回显"
         bigint wechat_config_version "未配置为0，配置更新递增，登录提交前复核"
@@ -78,7 +77,7 @@ SQL 在事务中创建 `public` 下的四张表，失败整批回滚。同名表
 ## 索引与业务约束
 
 - 企业域名、平台登录名全局唯一；企业登录名按 `(tenant_id, username)` 唯一。
-- 用户行上的微信身份按 `(tenant_id, wechat_app_id, open_id)` 唯一；唯一索引仅覆盖 `wechat_app_id` 和 `open_id` 均非空字符串的行，普通密码账号两项均为空字符串。首次登录直接原子创建带微信身份的普通成员和企业会话，之后复用同一账号。Web 自主注册开关不影响微信建号，停用账号或企业均禁止登录。
+- 用户行上的微信身份按 `(tenant_id, wechat_app_id, open_id)` 唯一；唯一索引仅覆盖 `wechat_app_id` 和 `open_id` 均非空字符串的行，普通密码账号两项均为空字符串。首次登录直接原子创建带微信身份的普通成员和企业会话，之后复用同一账号。Web 只提供账号密码登录，成员账号由管理员创建；停用账号或企业均禁止登录。
 - 微信首次创建的成员使用随机公开登录名和每账号独立的随机初始密码，数据库只保存 bcrypt 散列。小程序设置页通过新微信 code 验证同一用户后设置新密码；复登不会重置密码。AppSecret 直接明文保存在 `company.app_secret`，接口和日志均不返回密钥；`session_key` 不入库、不下发。
 - `company.app_id / app_secret` 未配置时为空字符串，`wechat_config_version` 初始为 0，配置更新时递增。配置保存后运行时读取；登录时在微信外部验证前读取快照，写入账号与会话前再次校验租户和配置版本。企业改域名保留配置；更换 AppID 必须提供新 AppSecret，不自动合并不同小程序的微信身份。
 - 成员索引支持企业内按创建时间分页；登录会话索引支持按主体、企业撤销和按到期时间清理。

@@ -122,9 +122,10 @@ test('cancellation aborts requests and ignores late results without clearing log
 test('preserves business errors and rejects malformed successful responses', async () => {
   const uni = runtime()
   const client = createTenantClient({ uni, baseUrl: '/api', hostname: 'acme.test' })
-  const failed = client.request('/auth/register', { authenticated: false })
-  uni.calls[0].success({ statusCode: 403, data: { error: { code: 'REGISTRATION_DISABLED', message: '企业已关闭注册' } } })
-  await assert.rejects(failed, error => error.message === '企业已关闭注册' && error.code === 'REGISTRATION_DISABLED')
+  client.saveSession(login())
+  const failed = client.request('/account/password', { method: 'POST' })
+  uni.calls[0].success({ statusCode: 403, data: { error: { code: 'forbidden', message: '当前操作权限不足' } } })
+  await assert.rejects(failed, error => error.message === '当前操作权限不足' && error.code === 'forbidden')
   const malformed = client.request('/tenant', { authenticated: false })
   uni.calls[1].success({ statusCode: 200, data: '<html>not API</html>' })
   await assert.rejects(malformed, /响应格式/)

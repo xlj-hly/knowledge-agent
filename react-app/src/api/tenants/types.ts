@@ -4,7 +4,6 @@ export interface Tenant {
   name: string
   hostname: string
   status: Status
-  registration_enabled: boolean
   created_at: string
   updated_at: string
 }
@@ -13,7 +12,6 @@ export interface TenantUpdate {
   name: string
   hostname: string
   status: Status
-  registration_enabled: boolean
 }
 
 export interface WechatConfiguration {

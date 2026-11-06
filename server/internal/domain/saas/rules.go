@@ -61,7 +61,7 @@ func (u User) ChangeAccess(c UserChanges, activeAdmins int64) (UserChanges, erro
 
 // Validated 校验企业部分更新并规范域名；部署保留域名由应用用例另行校验。
 func (c CompanyChanges) Validated() (CompanyChanges, error) {
-	if c.Name == nil && c.Hostname == nil && c.Status == nil && c.RegistrationEnabled == nil {
+	if c.Name == nil && c.Hostname == nil && c.Status == nil {
 		return CompanyChanges{}, Invalid("没有可更新的字段")
 	}
 	if c.Name != nil {
@@ -91,17 +91,6 @@ func (t Tenant) RequiresSessionRevocation(next Tenant) bool {
 func (t Tenant) RequireActive() error {
 	if t.Status != "active" {
 		return ErrDisabled
-	}
-	return nil
-}
-
-// RequireRegistration 在正常企业内实施密码自助注册开关。
-func (t Tenant) RequireRegistration() error {
-	if err := t.RequireActive(); err != nil {
-		return err
-	}
-	if !t.RegistrationEnabled {
-		return ErrRegistrationClosed
 	}
 	return nil
 }

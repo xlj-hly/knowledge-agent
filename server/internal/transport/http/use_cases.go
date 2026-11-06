@@ -11,7 +11,6 @@ import (
 type AuthUseCases interface {
 	Tenant(context.Context, dto.TenantIdentity) (dto.Tenant, error)
 	Me(context.Context, dto.TenantIdentity) (dto.TenantSession, error)
-	Register(context.Context, dto.TenantIdentity, dto.RegisterInput) (dto.TenantSession, error)
 	Login(context.Context, dto.TenantIdentity, dto.LoginInput) (dto.TenantSession, error)
 	Logout(context.Context, dto.TenantIdentity) (dto.OK, error)
 	PlatformLogin(context.Context, dto.LoginInput) (dto.PlatformSession, error)

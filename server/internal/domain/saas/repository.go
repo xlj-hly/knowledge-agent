@@ -52,7 +52,6 @@ type UserStore interface {
 // CompanyChanges 是企业资料的受控部分更新字段；nil 表示保留原值。
 type CompanyChanges struct {
 	Name, Hostname, Status *string
-	RegistrationEnabled    *bool
 }
 
 // UserChanges 是账号资料和状态的受控部分更新字段；nil 表示保留原值。

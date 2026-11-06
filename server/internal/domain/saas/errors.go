@@ -26,6 +26,3 @@ var ErrCredentials = &Error{"invalid_credentials", "用户名或密码错误"}
 
 // ErrDisabled 表示企业或账号已停用。
 var ErrDisabled = &Error{"disabled", "企业或账号已停用"}
-
-// ErrRegistrationClosed 表示企业已关闭自助注册，不允许创建账号。
-var ErrRegistrationClosed = &Error{"registration_closed", "企业暂未开放注册，请联系管理员"}

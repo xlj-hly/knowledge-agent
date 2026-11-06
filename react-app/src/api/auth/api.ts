@@ -8,8 +8,6 @@ export function createAuthApi(request: Request) {
     site: (signal?: AbortSignal) => request('/site', decodeSite, 'GET', undefined, signal),
     login: (body: Credentials, signal?: AbortSignal) =>
       request('/auth/login', decodeLogin, 'POST', body, signal),
-    register: (body: Credentials & { nickname: string }, signal?: AbortSignal) =>
-      request('/auth/register', decodeLogin, 'POST', body, signal),
     me: (signal?: AbortSignal) => request('/auth/me', decodeIdentity, 'GET', undefined, signal),
     logout: (signal?: AbortSignal) => request('/auth/logout', decodeOk, 'POST', undefined, signal),
     platformLogin: (body: Credentials, signal?: AbortSignal) =>
