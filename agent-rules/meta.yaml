@@ -18,6 +18,16 @@ profiles:
     file: uniapp/AGENTS.md
     match_paths:
       - uniapp/**
+  directories:
+    file: agent-rules/directories.md
+    when:
+      - 新增、移动、拆分或重命名源码与测试文件
+      - 调整目录或模块引用
+  architecture:
+    file: agent-rules/architecture.md
+    when:
+      - 新增业务模块或跨模块流程
+      - 改变模块依赖、身份上下文、共享状态或事务边界
   testing:
     file: agent-rules/testing.md
     when:
@@ -29,3 +39,8 @@ profiles:
     when:
       - 新增、修改或整理开发规范及规则索引
       - 调整规范加载入口或跨文档引用
+  git:
+    file: agent-rules/git.md
+    when:
+      - 准备 Git 提交或编写提交信息
+      - 整理提交范围或历史
