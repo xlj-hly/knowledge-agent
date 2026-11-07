@@ -4,6 +4,7 @@ import { WorkspaceRoutes } from '../../src/router/WorkspaceRoutes'
 import { createApi } from '../../src/api/client'
 import { alice, tenant, deferred } from '../fixtures/identity'
 import { MemoryRouter, Route, Routes } from 'react-router'
+import { aiFixture } from '../fixtures/ai'
 
 afterEach(() => {
   cleanup()
@@ -14,6 +15,7 @@ test('资料写入发出后离开页面，再返回会重新读取已生效的�
   let stored = alice
   const pending = deferred<Response>()
   vi.stubGlobal('fetch', async (url: string) => {
+    if (url.includes('/ai/') || url.endsWith('/knowledge/bases') || url.endsWith('/chat/sessions')) return new Response(JSON.stringify({ data: aiFixture(url) }))
     if (url.endsWith('/account/profile')) {
       // 服务端已提交，页面离开只取消等待，不能撤销已生效的数据。
       stored = { ...alice, nickname: '已经保存到服务端' }
@@ -33,7 +35,7 @@ test('资料写入发出后离开页面，再返回会重新读取已生效的�
   fireEvent.click(screen.getByRole('link', { name: '打开个人账号' }))
   fireEvent.change(await screen.findByLabelText('昵称'), { target: { value: '已经保存到服务端' } })
   fireEvent.click(screen.getByRole('button', { name: '保存个人资料' }))
-  fireEvent.click(screen.getByRole('link', { name: /^工作台$/ }))
+  fireEvent.click(screen.getByRole('link', { name: /^对话$/ }))
   fireEvent.click(screen.getByRole('link', { name: '打开个人账号' }))
   expect(await screen.findByLabelText('昵称')).toHaveProperty('value', '已经保存到服务端')
   await act(async () => {

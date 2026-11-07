@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { FormEvent } from 'react'
+import { Input } from 'antd'
 import type { TenantsApi } from '../../../../api/tenants/api'
 import type { Tenant, WechatConfiguration } from '../../../../api/tenants/types'
 import { ErrorNotice, Field, Loading, Modal } from '../../../../components/ui'
@@ -35,23 +36,23 @@ function ConfigurationFields({ api, tenantId, configuration, action, onClose, on
   onSaved: () => void
 }) {
   const [appId, setAppId] = useState(configuration.app_id)
-  const [secret, setSecret] = useState('')
+  const [secret, setSecret] = useState(configuration.app_secret)
   const [validation, setValidation] = useState('')
-  const secretRequired = !configuration.has_secret || appId.trim() !== configuration.app_id
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const error = !/^wx[0-9a-fA-F]{16}$/.test(appId.trim())
       ? '请填写有效的小程序 AppID'
-      : secretRequired && !secret.trim()
-        ? '首次配置或更换 AppID 时，请填写对应的 AppSecret'
+      : !secret.trim()
+        ? '请填写小程序 AppSecret'
         : ''
     setValidation(error)
     if (error) return
     void action.run((signal) => api.saveTenantWechat(tenantId, {
       app_id: appId.trim(),
-      ...(secret.trim() ? { app_secret: secret.trim() } : {}),
-    }, signal), () => {
-      setSecret('')
+      app_secret: secret.trim(),
+    }, signal), saved => {
+      setAppId(saved.app_id)
+      setSecret(saved.app_secret)
       onSaved()
     })
   }
@@ -61,8 +62,8 @@ function ConfigurationFields({ api, tenantId, configuration, action, onClose, on
         <Field label="小程序 AppID">
           <input value={appId} onChange={(event) => setAppId(event.target.value)} maxLength={18} autoComplete="off" autoCapitalize="none" spellCheck={false} required />
         </Field>
-        <Field label="小程序 AppSecret" hint={secretRequired ? '填写该 AppID 对应的密钥。' : '已配置密钥；留空保留现有密钥。'}>
-          <input type="password" value={secret} onChange={(event) => setSecret(event.target.value)} maxLength={256} autoComplete="new-password" />
+        <Field label="小程序 AppSecret" hint="填写该 AppID 对应的密钥。">
+          <Input.Password aria-label="小程序 AppSecret" value={secret} onChange={(event) => setSecret(event.target.value)} maxLength={256} autoComplete="new-password" />
         </Field>
       </fieldset>
       <ErrorNotice message={validation || action.error} />

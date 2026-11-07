@@ -12,7 +12,7 @@ import (
 var appIDFormat = regexp.MustCompile(`^wx[0-9a-fA-F]{16}$`)
 var appSecretFormat = regexp.MustCompile(`^[A-Za-z0-9_-]{1,256}$`)
 
-// WeChatConfig 仅允许平台管理员读取目标租户的安全配置视图。
+// WeChatConfig 仅允许平台管理员读取目标企业的完整小程序配置。
 func (s *Companies) WeChatConfig(ctx context.Context, token, tenantID string) (out dto.WeChatConfigView, err error) {
 	parsedID, parseErr := domain.ParseID(tenantID)
 	if parseErr != nil {
@@ -31,7 +31,7 @@ func (s *Companies) WeChatConfig(ctx context.Context, token, tenantID string) (o
 		if err != nil {
 			return err
 		}
-		out = dto.WeChatConfigView{AppID: cfg.AppID, HasSecret: cfg.AppSecret != ""}
+		out = dto.WeChatConfigView{AppID: cfg.AppID, AppSecret: cfg.AppSecret}
 		return nil
 	})
 	return
@@ -45,7 +45,7 @@ func (s *Companies) SaveWeChatConfig(ctx context.Context, token, tenantID string
 		return
 	}
 	tenantID = strconv.FormatInt(parsedID, 10)
-	if !appIDFormat.MatchString(in.AppID) || (in.AppSecret != "" && !appSecretFormat.MatchString(in.AppSecret)) {
+	if !appIDFormat.MatchString(in.AppID) || !appSecretFormat.MatchString(in.AppSecret) {
 		return out, domain.Invalid("小程序AppID或AppSecret格式无效")
 	}
 	err = s.platform(ctx, token, domain.Shared, func(tx domain.Store, _ platformState) error {
@@ -57,11 +57,9 @@ func (s *Companies) SaveWeChatConfig(ctx context.Context, token, tenantID string
 			return err
 		}
 		exists := err == nil
-		if in.AppSecret == "" {
-			if !exists || old.AppID != in.AppID {
-				return domain.Invalid("首次配置或更换AppID必须填写AppSecret")
-			}
-			out = dto.WeChatConfigView{AppID: old.AppID, HasSecret: true}
+		if exists && old.AppID == in.AppID && old.AppSecret == in.AppSecret {
+			// 原值保存不改变配置快照，避免打断正在使用同一凭据的微信登录。
+			out = dto.WeChatConfigView{AppID: old.AppID, AppSecret: old.AppSecret}
 			return nil
 		}
 		version := int64(1)
@@ -71,7 +69,7 @@ func (s *Companies) SaveWeChatConfig(ctx context.Context, token, tenantID string
 		if err := tx.SaveWeChatConfig(domain.WeChatConfiguration{TenantID: tenantID, AppID: in.AppID, AppSecret: in.AppSecret, Version: version}); err != nil {
 			return err
 		}
-		out = dto.WeChatConfigView{AppID: in.AppID, HasSecret: true}
+		out = dto.WeChatConfigView{AppID: in.AppID, AppSecret: in.AppSecret}
 		return nil
 	})
 	return

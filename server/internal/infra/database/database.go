@@ -1,4 +1,4 @@
-// Package database 管理 PostgreSQL 连接及 SaaS 表结构的就绪检查。
+// Package database 管理 PostgreSQL 连接及业务表结构的就绪检查。
 package database
 
 import (
@@ -46,11 +46,16 @@ func Wrap(pool *sql.DB) (*gorm.DB, error) {
 	return gorm.Open(postgres.New(postgres.Config{Conn: pool}), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent), DisableForeignKeyConstraintWhenMigrating: true, DisableAutomaticPing: true})
 }
 
-// Ready 核对 SaaS 业务表是否已存在；只检查，不执行建表。
+// Ready 核对已实现业务的表是否存在；只检查，不执行建表。
 func Ready(ctx context.Context, db *gorm.DB) error {
 	var ready bool
 	// 仅用 PostgreSQL 目录函数检查表是否已创建，不在运行时修改表结构。
-	if err := db.WithContext(ctx).Raw("SELECT to_regclass('company') IS NOT NULL AND to_regclass('users') IS NOT NULL AND to_regclass('auth_sessions') IS NOT NULL AND to_regclass('super_admin') IS NOT NULL").Scan(&ready).Error; err != nil {
+	if err := db.WithContext(ctx).Raw(`SELECT to_regclass('company') IS NOT NULL AND to_regclass('users') IS NOT NULL
+		AND to_regclass('auth_sessions') IS NOT NULL AND to_regclass('super_admin') IS NOT NULL
+		AND to_regclass('ai_models') IS NOT NULL AND to_regclass('ai_settings') IS NOT NULL
+		AND to_regclass('chat_sessions') IS NOT NULL AND to_regclass('chat_messages') IS NOT NULL AND to_regclass('knowledge_vector_stores') IS NOT NULL
+		AND to_regclass('knowledge_bases') IS NOT NULL AND to_regclass('knowledge_documents') IS NOT NULL
+		AND to_regclass('knowledge_chunks') IS NOT NULL`).Scan(&ready).Error; err != nil {
 		return fmt.Errorf("check schema: %w", err)
 	}
 	if !ready {

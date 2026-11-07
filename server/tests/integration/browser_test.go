@@ -39,10 +39,25 @@ func TestSaaSBrowserServer(t *testing.T) {
 		}
 	})
 	s := newIntegrationSuite(t)
+	workerCtx, stopWorker := context.WithCancel(context.Background())
+	workerErr := make(chan error, 1)
+	go func() { workerErr <- s.application.Knowledge.Run(workerCtx) }()
+	t.Cleanup(func() {
+		stopWorker()
+		select {
+		case err := <-workerErr:
+			if err != nil {
+				t.Errorf("knowledge worker: %v", err)
+			}
+		case <-time.After(10 * time.Second):
+			t.Error("knowledge worker did not stop before database cleanup")
+		}
+	})
 	done := make(chan struct{})
 	var stopOnce sync.Once
 	mux := http.NewServeMux()
 	mux.Handle("/", s.handler)
+	registerBrowserModelFixture(mux)
 	mux.HandleFunc("GET /__test/identity", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(map[string]string{"run_id": runID}); err != nil {

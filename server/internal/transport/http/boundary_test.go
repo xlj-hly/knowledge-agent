@@ -100,10 +100,14 @@ func TestRejectedRequestsRetainCORSAndSecurityHeaders(t *testing.T) {
 	preflight := httptest.NewRequest(http.MethodOptions, "/api/platform/auth/login", nil)
 	preflight.RemoteAddr = "192.0.2.1:12345"
 	preflight.Header.Set("Origin", "https://app.alpha.test")
+	preflight.Header.Set("Access-Control-Request-Method", http.MethodDelete)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, preflight)
 	if w.Code != http.StatusNoContent {
 		t.Fatalf("preflight rejected: %d", w.Code)
+	}
+	if !strings.Contains(w.Header().Get("Access-Control-Allow-Methods"), http.MethodDelete) {
+		t.Fatal("跨域预检未允许知识库删除操作")
 	}
 	if w.Header().Get("Access-Control-Allow-Origin") != "https://app.alpha.test" || w.Header().Get("X-Content-Type-Options") != "nosniff" {
 		t.Fatalf("preflight lost headers: %v", w.Header())

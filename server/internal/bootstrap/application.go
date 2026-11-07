@@ -5,9 +5,16 @@ import (
 	"fmt"
 	"net/http"
 
+	aiusecase "go-server/internal/app/ai/usecase"
+	chatusecase "go-server/internal/app/chat/usecase"
+	knowledgeusecase "go-server/internal/app/knowledge/usecase"
 	"go-server/internal/app/saas/port"
 	"go-server/internal/app/saas/usecase"
 	"go-server/internal/app/storage"
+	aidriver "go-server/internal/infra/ai"
+	"go-server/internal/infra/ai/presets"
+	"go-server/internal/infra/database"
+	knowledgedriver "go-server/internal/infra/knowledge"
 	"go-server/internal/infra/persistence/saas"
 	objectstorage "go-server/internal/infra/storage"
 	"go-server/internal/infra/wechat"
@@ -17,8 +24,11 @@ import (
 
 // Application 拥有同一组用例和 HTTP 入口；调用方保留传入数据库的关闭责任。
 type Application struct {
-	Handler  http.Handler
-	Services usecase.Services
+	Handler   http.Handler
+	Services  usecase.Services
+	Knowledge *knowledgeusecase.Service
+	AI        *aiusecase.Service
+	Chat      *chatusecase.Service
 }
 
 type dependencies struct {
@@ -69,6 +79,19 @@ func New(db *gorm.DB, cfg Config, options ...Option) (*Application, error) {
 			return nil, err
 		}
 	}
+	// 同一只读目录贯通配置校验与实际调用；启动时拒绝无效注册，不在请求中降级。
+	registry, err := aidriver.NewBuiltinRegistry()
+	if err != nil {
+		return nil, fmt.Errorf("创建模型注册目录: %w", err)
+	}
+	templates, err := presets.NewBuiltin()
+	if err != nil {
+		return nil, fmt.Errorf("创建产品预设目录: %w", err)
+	}
+	vectors, err := knowledgedriver.NewBuiltinVectors()
+	if err != nil {
+		return nil, fmt.Errorf("创建向量引擎注册目录: %w", err)
+	}
 	if external.wechat == nil {
 		external.wechat = wechat.NewProvider(wechat.New())
 	}
@@ -79,8 +102,14 @@ func New(db *gorm.DB, cfg Config, options ...Option) (*Application, error) {
 		}
 	}
 	services := usecase.New(usecase.Dependencies{Persistence: repository.New(db), WeChat: external.wechat, Objects: external.objects}, usecase.Config{SessionTTL: cfg.SessionTTL, PlatformHosts: cfg.PlatformHosts})
-	handler := httpapi.New(httpapi.Dependencies{Auth: services.Auth, Accounts: services.Accounts, Companies: services.Companies, Sites: services.Sites, Maintenance: services.Maintenance}, httpapi.Config{AllowedOrigins: cfg.AllowedOrigins})
-	return &Application{Handler: handler, Services: services}, nil
+	guard := database.NewConfigGuard(db)
+	refs := &aiReferences{}
+	ai := assembleAI(db, services.Auth, refs, guard, registry, templates)
+	knowledge := assembleKnowledge(db, services.Auth, external.objects, ai, guard, registry, vectors)
+	chat := assembleChat(db, services.Auth, ai, knowledge, guard, registry)
+	refs.knowledge = knowledge
+	handler := httpapi.New(httpapi.Dependencies{Auth: services.Auth, Accounts: services.Accounts, Companies: services.Companies, Sites: services.Sites, Maintenance: services.Maintenance, Knowledge: knowledge, AI: ai, Chat: chat}, httpapi.Config{AllowedOrigins: cfg.AllowedOrigins})
+	return &Application{Handler: handler, Services: services, Knowledge: knowledge, AI: ai, Chat: chat}, nil
 }
 
 // Bootstrap 组装初始化用例，不覆盖已有账号，也不启动 HTTP 或其他外部能力。

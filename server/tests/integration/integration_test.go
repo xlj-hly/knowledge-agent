@@ -77,6 +77,7 @@ type integrationSuite struct {
 	db               *gorm.DB
 	pool             *pgxpool.Pool
 	handler          http.Handler
+	application      *bootstrap.Application
 	platform         loginView
 	schema           string
 	config           bootstrap.Config
@@ -199,6 +200,7 @@ func (s *integrationSuite) rebuildHandler(t *testing.T) {
 		t.Fatalf("assemble SaaS application: %v", err)
 	}
 	s.handler = application.Handler
+	s.application = application
 }
 
 func (s *integrationSuite) request(method, host, path, token string, body any) apiResult {

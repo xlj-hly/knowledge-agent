@@ -43,7 +43,15 @@ export function WorkspaceLayout({
         </div>
         <nav aria-label="主导航">
           <span className="nav-group-label">工作空间</span>
-          {navigation.map(item => <NavItem key={item.to} {...item} />)}
+          {navigation.filter(item => !item.group).map(item => <NavItem key={item.to} {...item} />)}
+          {navigation.some(item => item.group === 'ai') && <>
+            <span className="nav-group-label section">AI 配置</span>
+            {navigation.filter(item => item.group === 'ai').map(item => <NavItem key={item.to} {...item} />)}
+          </>}
+          {navigation.some(item => item.group === 'management') && <>
+            <span className="nav-group-label section">企业管理</span>
+            {navigation.filter(item => item.group === 'management').map(item => <NavItem key={item.to} {...item} />)}
+          </>}
           <span className="nav-group-label second">账号</span>
           <NavItem
             icon="user"
@@ -52,13 +60,6 @@ export function WorkspaceLayout({
           />
         </nav>
         <div className="sidebar-bottom">
-          <div className="secure-note">
-            <Icon name="shield" />
-            <div>
-              <strong>安心协作，从这里开始</strong>
-              <span>企业独立空间 · 权限有序管理</span>
-            </div>
-          </div>
           <div className="sidebar-profile">
             <Avatar name={displayName} url={user?.avatar_url} />
             <div>

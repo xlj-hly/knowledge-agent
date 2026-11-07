@@ -15,7 +15,11 @@ import (
 
 // decode 在进入用例前完成有界读取和对象、字段 null 检查，避免绑定器把 null 当作零值。
 func decode(c *gin.Context, out any) error {
-	body, err := io.ReadAll(http.MaxBytesReader(c.Writer, c.Request.Body, 16*1024))
+	return decodeObject(c, out, 16*1024)
+}
+
+func decodeObject(c *gin.Context, out any, limit int64) error {
+	body, err := io.ReadAll(http.MaxBytesReader(c.Writer, c.Request.Body, limit))
 	if err != nil {
 		return domain.Invalid("请求内容无效或超过大小限制")
 	}

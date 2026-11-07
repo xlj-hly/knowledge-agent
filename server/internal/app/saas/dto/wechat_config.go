@@ -1,12 +1,12 @@
 package dto
 
-// WeChatConfigView 仅公开AppID及密钥是否存在，不包含凭据。
+// WeChatConfigView 是平台授权配置入口使用的完整小程序配置。
 type WeChatConfigView struct {
 	AppID     string `json:"app_id"`
-	HasSecret bool   `json:"has_secret"`
+	AppSecret string `json:"app_secret"`
 }
 
-// WeChatConfigInput 的空密钥表示保留同一AppID的原密钥；首次保存及更换AppID必须提供密钥。
+// WeChatConfigInput 完整替换小程序配置，AppID 与 AppSecret 均为必填。
 type WeChatConfigInput struct {
 	AppID     string `json:"app_id"`
 	AppSecret string `json:"app_secret"`

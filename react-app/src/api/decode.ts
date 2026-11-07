@@ -16,6 +16,11 @@ export function id(value: unknown): string {
 export function bool(value: unknown): boolean {
   return typeof value === 'boolean' ? value : invalid()
 }
+/** 服务商图形由后端内置目录提供，避免配置响应引入任意远程图片请求。 */
+export function providerLogo(value: unknown): string {
+  const logo = string(value)
+  return logo.length <= 256 * 1024 && /^data:image\/(?:svg\+xml|png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(logo) ? logo : invalid()
+}
 export function integer(value: unknown, min = 0): number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= min
     ? value

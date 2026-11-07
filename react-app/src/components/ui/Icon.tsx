@@ -18,7 +18,25 @@ type IconName =
   | 'globe'
   | 'spark'
   | 'refresh'
+  | 'book'
+  | 'database'
+  | 'file'
+  | 'chat'
+  | 'stop'
+  | 'trash'
+  | 'menu'
+  | 'more'
+  | 'copy'
 const paths: Record<IconName, ReactNode> = {
+  menu: <path d="M4 6h16M4 12h16M4 18h16" />,
+  more: <><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></>,
+  copy: <><rect x="8" y="8" width="12" height="13" rx="2" /><path d="M16 8V3H3v13h5" /></>,
+  chat: <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8Z" />,
+  stop: <rect x="6" y="6" width="12" height="12" rx="2" />,
+  trash: <><path d="M3 6h18M9 6V4h6v2M5 6l1 15h12l1-15M10 10v7M14 10v7" /></>,
+  book: <><path d="M12 6C9 3 5 3 3 4v15c3-1 6-1 9 2 3-3 6-3 9-2V4c-2-1-6-1-9 2Zm0 0v15" /></>,
+  database: <><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0" /></>,
+  file: <><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Zm0 0v6h6M8 13h8M8 17h5" /></>,
   grid: (
     <>
       <rect x="3" y="3" width="7" height="7" rx="2" />

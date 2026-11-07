@@ -51,8 +51,15 @@ func Run(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
-	server := &http.Server{Addr: cfg.ListenAddr, Handler: application.Handler, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 * 1024}
-	return serve(ctx, server, application.Services.Maintenance.CleanupSessions)
+	check, cancel = context.WithTimeout(ctx, 5*time.Second)
+	err = application.Chat.Recover(check)
+	cancel()
+	if err != nil {
+		return err
+	}
+	// 流式回答由用例的生成期限和客户端停止控制，不能被普通响应的 20 秒写期限截断。
+	server := &http.Server{Addr: cfg.ListenAddr, Handler: application.Handler, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 * 1024}
+	return serve(ctx, server, application.Services.Maintenance.CleanupSessions, application.Knowledge.Run)
 }
 
 func runBootstrap(ctx context.Context) error {
@@ -78,7 +85,24 @@ func runBootstrap(ctx context.Context) error {
 	return nil
 }
 
-func serve(ctx context.Context, server *http.Server, cleanup func(context.Context) error) error {
+func serve(ctx context.Context, server *http.Server, cleanup func(context.Context) error, worker func(context.Context) error) (result error) {
+	background, stop := context.WithCancel(ctx)
+	workerErr := make(chan error, 1)
+	workerDone := make(chan struct{})
+	go func() {
+		defer close(workerDone)
+		workerErr <- worker(background)
+	}()
+	// 所有退出路径先取消后台任务，等待其释放数据库和对象流后才归还进程资源。
+	defer func() {
+		stop()
+		shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdown); err != nil {
+			result = errors.Join(result, err, server.Close())
+		}
+		<-workerDone
+	}()
 	serverErr := make(chan error, 1)
 	go func() {
 		slog.Info("SaaS API 已启动", "address", server.Addr)
@@ -89,13 +113,15 @@ func serve(ctx context.Context, server *http.Server, cleanup func(context.Contex
 	for {
 		select {
 		case <-ctx.Done():
-			shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			err := server.Shutdown(shutdown)
-			cancel()
-			if err != nil {
-				return errors.Join(err, server.Close())
-			}
 			return nil
+		case err := <-workerErr:
+			if ctx.Err() != nil {
+				return nil
+			}
+			if err == nil {
+				return fmt.Errorf("知识库后台任务提前退出")
+			}
+			return fmt.Errorf("知识库后台任务退出: %w", err)
 		case err := <-serverErr:
 			if errors.Is(err, http.ErrServerClosed) {
 				return nil

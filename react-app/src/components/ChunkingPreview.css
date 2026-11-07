@@ -1,0 +1,6 @@
+.chunking-preview { display: grid; gap: 12px; padding: 18px; border: 1px solid #e4e9f1; border-radius: 9px; background: #fafbfe; }
+.chunking-preview > button { justify-self: start; }
+.chunk-preview-results { max-height: 340px; overflow-y: auto; display: grid; gap: 12px; }
+.chunk-preview-results article { background: white; border: 1px solid #e4e9f1; border-radius: 7px; padding: 13px; display: grid; gap: 8px; }
+.chunk-preview-results small { color: #667085; }
+.chunk-preview-results pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 13px; line-height: 1.7; }

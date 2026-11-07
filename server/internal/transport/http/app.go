@@ -26,6 +26,11 @@ func New(deps Dependencies, cfg Config) http.Handler {
 	registerAuthRoutes(api, deps.Auth)
 	registerAccountRoutes(api, deps.Accounts, deps.Auth)
 	registerCompanyRoutes(api, deps.Companies)
+	registerAIRoutes(api, deps.AI)
+	registerChatRoutes(api, deps.Chat)
+	if deps.Knowledge != nil {
+		registerKnowledgeRoutes(api, deps.Knowledge)
+	}
 	return r
 }
 func endpoint(fn func(*gin.Context) (any, error)) gin.HandlerFunc {
@@ -130,6 +135,8 @@ func reply(c *gin.Context, data any, err error) {
 		case "wechat_not_configured", "wechat_unavailable":
 			status = 503
 		case "wechat_upstream_error":
+			status = 502
+		case "knowledge_upstream_error", "ai_upstream_error", "chat_upstream_error":
 			status = 502
 		case "wechat_rate_limited":
 			status = 429

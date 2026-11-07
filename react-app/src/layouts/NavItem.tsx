@@ -5,6 +5,7 @@ export interface NavItemProps {
   label: string
   to: string
   end?: boolean
+  group?: 'ai' | 'management'
 }
 
 export function NavItem({
@@ -18,6 +19,8 @@ export function NavItem({
       className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
       to={to}
       end={end}
+      aria-label={label}
+      title={label}
     >
       {({ isActive }) => (
         <>

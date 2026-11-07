@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestSaaSSchemaContainsOnlyAccountTablesAndComments(t *testing.T) {
+func TestSchemaContainsImplementedTablesAndComments(t *testing.T) {
 	s := newIntegrationSuite(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -18,7 +18,7 @@ func TestSaaSSchemaContainsOnlyAccountTablesAndComments(t *testing.T) {
 	`).Scan(&tables); err != nil {
 		t.Fatal(err)
 	}
-	if tables != "auth_sessions,company,super_admin,users" {
+	if tables != "ai_models,ai_settings,auth_sessions,chat_messages,chat_sessions,company,knowledge_bases,knowledge_chunks,knowledge_documents,knowledge_vector_stores,super_admin,users" {
 		t.Fatalf("SaaS schema contains unexpected tables: %s", tables)
 	}
 	for table, names := range map[string][]string{

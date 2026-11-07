@@ -3,6 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import App from '../../src/App'
 import { alice, bob, tenant } from '../fixtures/identity'
+import { aiFixture } from '../fixtures/ai'
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); sessionStorage.clear() })
 
@@ -16,6 +17,7 @@ function boot(path: string, user = alice, authenticated = true, kind: 'platform'
       : url.endsWith('/auth/login')
       ? { token: 'new-token', expires_at: '2099-01-01T00:00:00Z', user, tenant }
       : url.endsWith('/admin/users') ? { items: [user], total: 1, page: 1, page_size: 20 }
+      : url.includes('/ai/') || url.endsWith('/knowledge/bases') || url.endsWith('/knowledge/vector-stores') || url.endsWith('/knowledge/vector-providers') || url.endsWith('/chat/sessions') ? aiFixture(url)
       : { user, tenant }
     return new Response(JSON.stringify({ data }))
   })
@@ -28,14 +30,16 @@ test('直接访问资料地址时验证会话并加载资料，导航与后退�
   const { router } = boot('/account')
   expect(await screen.findByLabelText('昵称')).toHaveProperty('value', alice.nickname)
   expect(screen.getByRole('link', { name: '个人账号' }).getAttribute('aria-current')).toBe('page')
-  fireEvent.click(screen.getByRole('link', { name: '工作台' }))
+  fireEvent.click(screen.getByRole('link', { name: '对话' }))
   await waitFor(() => expect(router.state.location.pathname).toBe('/'))
-  expect(await screen.findByRole('heading', { name: `你好，${alice.nickname}` })).toBeTruthy()
+  expect(await screen.findByRole('heading', { name: '今天想了解什么？' })).toBeTruthy()
+  expect(screen.getByText('对话', { selector: '.breadcrumb strong' })).toBeTruthy()
+  expect(screen.getByRole('contentinfo').textContent).toContain('云序')
   await act(() => router.navigate(-1))
   expect(await screen.findByLabelText('昵称')).toHaveProperty('value', alice.nickname)
   expect(router.state.location.pathname).toBe('/account')
   await act(() => router.navigate(1))
-  expect(await screen.findByRole('heading', { name: `你好，${alice.nickname}` })).toBeTruthy()
+  expect(await screen.findByRole('heading', { name: '今天想了解什么？' })).toBeTruthy()
   expect(router.state.location.pathname).toBe('/')
 })
 
@@ -49,13 +53,25 @@ test('未登录直达受保护页面先进入登录，成功后恢复原地址',
   expect(router.state.location.pathname).toBe('/settings')
 })
 
+test('AI 配置只使用侧栏导航，默认配置先显示摘要且不展开大表单', async () => {
+  const { router } = boot('/models')
+  expect(await screen.findByRole('heading', { name: 'LLM 对话模型' })).toBeTruthy()
+  expect(screen.queryByRole('navigation', { name: 'AI 配置分类' })).toBeNull()
+  expect(screen.getAllByRole('link', { name: '默认配置与提示词' })).toHaveLength(1)
+  fireEvent.click(screen.getByRole('link', { name: '默认配置与提示词' }))
+  expect(await screen.findByRole('button', { name: '编辑系统提示词' })).toBeTruthy()
+  expect(screen.queryByLabelText('系统提示词')).toBeNull()
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(router.state.location.pathname).toBe('/ai-settings')
+})
+
 test('普通成员直接访问管理员页面显示无权访问，未发出管理员请求', async () => {
   const { calls, router } = boot('/members', bob)
   expect(await screen.findByRole('heading', { name: '无权访问' })).toBeTruthy()
   expect(calls.some(url => url.includes('/admin/'))).toBe(false)
   expect(screen.queryByRole('link', { name: '成员管理' })).toBeNull()
   fireEvent.click(screen.getByRole('link', { name: '返回工作台' }))
-  expect(await screen.findByRole('heading', { name: `你好，${bob.nickname}` })).toBeTruthy()
+  expect(await screen.findByRole('heading', { name: '今天想了解什么？' })).toBeTruthy()
   expect(router.state.location.pathname).toBe('/')
 })
 
@@ -63,7 +79,7 @@ test('未知地址展示 404 并可返回当前空间，企业域名不开放平
   const { router } = boot('/not-a-page')
   expect(await screen.findByRole('heading', { name: '页面不存在' })).toBeTruthy()
   fireEvent.click(screen.getByRole('link', { name: '返回工作台' }))
-  expect(await screen.findByRole('heading', { name: `你好，${alice.nickname}` })).toBeTruthy()
+  expect(await screen.findByRole('heading', { name: '今天想了解什么？' })).toBeTruthy()
   await act(() => router.navigate('/platform/tenants'))
   expect(await screen.findByRole('heading', { name: '无权访问' })).toBeTruthy()
   expect(screen.queryByRole('heading', { name: '欢迎回到管理控制台' })).toBeNull()
@@ -115,7 +131,7 @@ test('登录持久化失败仍进入工作台，并向用户显示无法保存�
   fireEvent.change(await screen.findByLabelText('用户名'), { target: { value: 'alice' } })
   fireEvent.change(screen.getByLabelText('密码'), { target: { value: 'valid-password' } })
   fireEvent.click(screen.getByRole('button', { name: '登录工作空间' }))
-  expect(await screen.findByRole('heading', { name: `你好，${alice.nickname}` })).toBeTruthy()
+  expect(await screen.findByRole('heading', { name: '今天想了解什么？' })).toBeTruthy()
   expect((await screen.findByRole('alert')).textContent).toContain('保存会话')
 })
 

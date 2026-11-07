@@ -13,6 +13,7 @@ export type Request = <T>(
   method?: string,
   body?: unknown,
   signal?: AbortSignal,
+  responseType?: 'json' | 'blob',
 ) => Promise<T>
 
 /** 请求期限包含正文读取；取消等待已发出的写入不会回滚服务端结果。 */
@@ -24,7 +25,7 @@ export function createRequest({
 }: ApiOptions): Request {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0)
     throw new Error('请求等待期限必须为正整数')
-  return async (path, decode, method = 'GET', body, signal) => {
+  return async (path, decode, method = 'GET', body, signal, responseType = 'json') => {
     const controller = new AbortController()
     let timedOut = false
     const cancel = () => controller.abort(signal?.reason)
@@ -35,7 +36,7 @@ export function createRequest({
       controller.abort()
     }, timeoutMs)
     const headers: Record<string, string> = {
-      Accept: 'application/json',
+      Accept: responseType === 'blob' ? 'application/octet-stream' : 'application/json',
     }
     if (token) headers.Authorization = `Bearer ${token}`
     const multipart = body instanceof FormData
@@ -51,6 +52,7 @@ export function createRequest({
         credentials: 'omit',
       })
       if (response.status === 401 && token && !controller.signal.aborted) onUnauthorized?.()
+      if (response.ok && responseType === 'blob') return decode(await response.blob())
       let value: unknown
       try {
         value = await response.json()

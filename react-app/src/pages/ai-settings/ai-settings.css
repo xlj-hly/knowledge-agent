@@ -1,0 +1,29 @@
+.ai-settings-page { max-width: 1040px; margin: 0 auto; }
+.ai-settings-list { background: #fff; border: 1px solid #e8ebf1; border-radius: 12px; overflow: hidden; }
+.ai-setting-row { display: flex; align-items: center; gap: 18px; padding: 25px 28px; }
+.ai-setting-row + .ai-setting-row { border-top: 1px solid #edf0f5; }
+.ai-setting-icon { display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border-radius: 10px; background: #f4f5fb; color: #666b86; }
+.ai-setting-info { flex: 1; min-width: 0; }
+.ai-setting-info h2 { margin: 0 0 5px; color: #202631; font-size: 15px; font-weight: 600; }
+.ai-setting-info p { margin: 0; color: #8b92a0; font-size: 12px; line-height: 1.7; }
+.ai-setting-value { margin-top: 10px; color: #515b6c; font-size: 13px; line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 690px; }
+.ai-settings-footnote { margin: 15px 4px 0; color: #9198a6; font-size: 12px; }
+.ai-settings-drawer .ant-drawer-body { padding: 24px; }
+.ai-editor-description { margin: 0 0 25px; color: #7b8494; font-size: 13px; line-height: 1.8; }
+.ai-settings-editor > fieldset { display: grid; gap: 22px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.ai-settings-editor .ant-select, .ai-settings-editor .ant-input-number { width: 100%; }
+.ai-settings-editor .field { gap: 8px; }
+.ai-settings-editor .ant-input-number-input { box-shadow: none; background: transparent; }
+.ai-settings-editor .ant-input-number:hover, .ai-settings-editor .ant-select:hover { box-shadow: none; }
+.ai-settings-editor .ant-input, .ai-settings-editor .ant-input-number, .ai-settings-editor .ant-select { font-size: 14px; }
+.ai-editor-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.ai-editor-help { margin: -4px 0 0; color: #8b92a0; font-size: 12px; line-height: 1.8; }
+.ai-editor-number-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.ai-settings-editor .ant-collapse-header { padding-left: 0 !important; }
+.ai-settings-editor .ant-collapse-body { padding: 0 !important; }
+@media (max-width: 700px) {
+  .ai-setting-row { gap: 12px; padding: 20px 16px; }
+  .ai-setting-icon { display: none; }
+  .ai-setting-value { max-width: calc(100vw - 175px); }
+  .ai-editor-number-grid { grid-template-columns: 1fr; }
+}

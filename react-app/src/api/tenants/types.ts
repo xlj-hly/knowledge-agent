@@ -16,10 +16,10 @@ export interface TenantUpdate {
 
 export interface WechatConfiguration {
   app_id: string
-  has_secret: boolean
+  app_secret: string
 }
 
 export interface WechatConfigurationUpdate {
   app_id: string
-  app_secret?: string
+  app_secret: string
 }

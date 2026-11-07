@@ -11,6 +11,12 @@ import { TenantsPage } from '../pages/platform/tenants/TenantsPage'
 import { MembersPage } from '../pages/workspace/members/MembersPage'
 import { AccountPage } from '../pages/account/AccountPage'
 import { SettingsPage } from '../pages/workspace/settings/SettingsPage'
+import { KnowledgePage } from '../pages/knowledge/KnowledgePage'
+import { KnowledgeDetailPage } from '../pages/knowledge/KnowledgeDetailPage'
+import { ModelsPage } from '../pages/models/ModelsPage'
+import { VectorStoresPage } from '../pages/vector-stores/VectorStoresPage'
+import { ChatPage } from '../pages/chat/ChatPage'
+import { AISettingsPage } from '../pages/ai-settings/AISettingsPage'
 import { RouteErrorPage } from '../pages/error/RouteErrorPage'
 import { pagePath, routeTitle } from './navigation'
 
@@ -35,14 +41,19 @@ export function WorkspaceRoutes({ api, platform, identity, onSessionEnd, session
       () => onSessionEnd('已安全退出当前会话。'),
     )
   }
-  const home = pagePath(platform, 'overview')
+  const home = pagePath(platform, platform ? 'overview' : 'chat')
   const account = pagePath(platform, 'account')
-  const navigation: NavItemProps[] = [{ icon: 'grid', label: '工作台', to: home, end: true }]
+  const navigation: NavItemProps[] = [{ icon: platform ? 'grid' : 'chat', label: platform ? '工作台' : '对话', to: home, end: true }]
   if (admin) navigation.push({ icon: 'building', label: '企业管理', to: pagePath(platform, 'tenants') })
+  if (user) navigation.push({ icon: 'book', label: '知识库', to: pagePath(false, 'knowledge') })
   if (user?.role === 'admin') {
     navigation.push(
-      { icon: 'users', label: '成员管理', to: pagePath(platform, 'members') },
-      { icon: 'settings', label: '企业设置', to: pagePath(platform, 'settings') },
+      { icon: 'spark', label: 'LLM 对话模型', to: pagePath(false, 'models'), group: 'ai' },
+      { icon: 'spark', label: '嵌入器 Embedder', to: pagePath(false, 'embedders'), group: 'ai' },
+      { icon: 'database', label: '向量存储', to: pagePath(false, 'vector-stores'), group: 'ai' },
+      { icon: 'settings', label: '默认配置与提示词', to: pagePath(false, 'ai-settings'), group: 'ai' },
+      { icon: 'users', label: '成员管理', to: pagePath(platform, 'members'), group: 'management' },
+      { icon: 'settings', label: '企业设置', to: pagePath(platform, 'settings'), group: 'management' },
     )
   }
   return (
@@ -61,12 +72,20 @@ export function WorkspaceRoutes({ api, platform, identity, onSessionEnd, session
       <Routes>
         <Route
           index
-          element={<OverviewPage admin={admin} user={user} tenant={tenant} platform={platform} />}
+          element={platform ? <OverviewPage admin={admin} user={user} tenant={tenant} platform={platform} /> : <ChatPage api={api} />}
         />
         {platform ? (
           <Route path="tenants" element={<TenantsPage api={api} />} />
         ) : (
           <>
+            <Route path="chat/:id" element={<ChatPage api={api} />} />
+            <Route path="overview" element={<OverviewPage admin={admin} user={user} tenant={tenant} platform={false} />} />
+            <Route path="knowledge" element={<KnowledgePage api={api} />} />
+            <Route path="knowledge/:id" element={<KnowledgeDetailPage api={api} />} />
+            <Route path="models" element={user?.role === 'admin' ? <ModelsPage key="chat" api={api} kind="chat" /> : <RouteErrorPage forbidden home={home} />} />
+            <Route path="embedders" element={user?.role === 'admin' ? <ModelsPage key="embedding" api={api} kind="embedding" /> : <RouteErrorPage forbidden home={home} />} />
+            <Route path="ai-settings" element={user?.role === 'admin' ? <AISettingsPage api={api} /> : <RouteErrorPage forbidden home={home} />} />
+            <Route path="vector-stores" element={user?.role === 'admin' ? <VectorStoresPage api={api} /> : <RouteErrorPage forbidden home={home} />} />
             <Route path="members" element={user?.role === 'admin' ? (
               <MembersPage
                 api={api}

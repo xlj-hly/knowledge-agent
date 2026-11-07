@@ -1,0 +1,20 @@
+.vector-catalog-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
+.vector-catalog-toolbar .ant-input-search { max-width: 300px; }
+.vector-engine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 28px; }
+.vector-engine { display: flex; gap: 14px; align-items: center; padding: 18px; text-align: left; background: white; border: 1px solid #e5e9f1; border-radius: 10px; cursor: pointer; }
+.vector-engine:hover { border-color: #7596ed; background: #fafbff; }
+.vector-engine > div { flex: 1; }
+.vector-engine h3 { font-size: 15px; }
+.vector-engine p { margin-top: 6px; color: #8b95a8; font-size: 12px; }
+.vector-connection-name { display: flex; align-items: center; gap: 10px; }
+.vector-stores-page .vector-endpoint { max-width: 260px; overflow-wrap: anywhere; white-space: normal; color: #778196; font-size: 12px; }
+.vector-tip { color: #8b95a8; font-size: 12px; line-height: 1.8; margin-top: 18px; }
+.vector-editor { display: flex; flex-direction: column; gap: 22px; }
+.vector-editor-brand { display: flex; gap: 14px; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #edf0f5; }
+.vector-editor-brand strong { font-size: 16px; }
+.vector-editor-brand p { margin-top: 4px; font-size: 12px; color: #8b95a8; }
+.vector-field { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #42516a; }
+.vector-field > label:not(.ant-checkbox-wrapper) { display: flex; flex-direction: column; gap: 8px; }
+.vector-field small { color: #9099a9; font-size: 11px; line-height: 1.7; }
+.vector-editor-footer { display: flex; justify-content: flex-end; }
+@media (max-width: 600px) { .vector-engine { padding: 18px; flex-wrap: wrap; gap: 12px; } .vector-engine .ant-btn { width: 100%; } .vector-engine .ant-tag { display: none; } }

@@ -62,4 +62,7 @@ type Dependencies struct {
 	Companies   CompanyUseCases
 	Sites       SiteUseCases
 	Maintenance MaintenanceUseCases
+	Knowledge   KnowledgeUseCases
+	AI          AIUseCases
+	Chat        ChatUseCases
 }

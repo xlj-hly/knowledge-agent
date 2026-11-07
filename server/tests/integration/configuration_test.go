@@ -12,7 +12,7 @@ import (
 
 type wechatConfigView struct {
 	AppID     string `json:"app_id"`
-	HasSecret bool   `json:"has_secret"`
+	AppSecret string `json:"app_secret"`
 }
 
 func TestSaaSDisabledTenantKeepsSiteIdentityAndRejectsLogin(t *testing.T) {
@@ -47,7 +47,7 @@ func TestSaaSSiteAndTenantWeChatConfiguration(t *testing.T) {
 	}
 	endpoint := "/api/platform/tenants/" + alpha.Tenant.ID + "/wechat"
 	initial := decodeSuccess[wechatConfigView](t, s.request(http.MethodGet, "platform.test", endpoint, s.platform.Token, nil))
-	if initial.AppID != "" || initial.HasSecret {
+	if initial.AppID != "" || initial.AppSecret != "" {
 		t.Fatal("new tenant unexpectedly configured")
 	}
 	for _, body := range []map[string]any{{"app_id": "wx0000000000000001"}, {"app_id": "wx0000000000000001", "app_secret": ""}, {"app_id": "wx0000000000000001", "app_secret": nil}, {"app_id": "invalid", "app_secret": "secret"}, {"app_id": "wx0000000000000001", "app_secret": "   "}, {"app_id": "wx0000000000000001", "app_secret": "valid", "enabled": true}} {
@@ -55,7 +55,7 @@ func TestSaaSSiteAndTenantWeChatConfiguration(t *testing.T) {
 	}
 	secret := "configuration_secret_alpha"
 	saved := decodeSuccess[wechatConfigView](t, s.request(http.MethodPut, "platform.test", "/api/platform/tenants/00"+alpha.Tenant.ID+"/wechat", s.platform.Token, map[string]any{"app_id": "wx0000000000000001", "app_secret": secret}))
-	if saved.AppID != "wx0000000000000001" || !saved.HasSecret {
+	if saved.AppID != "wx0000000000000001" || saved.AppSecret != secret {
 		t.Fatal("configuration was not saved")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -69,21 +69,72 @@ func TestSaaSSiteAndTenantWeChatConfiguration(t *testing.T) {
 		t.Fatal("company did not store the supplied secret with initial version")
 	}
 	for _, body := range []map[string]any{{"app_id": saved.AppID}, {"app_id": saved.AppID, "app_secret": ""}} {
-		decodeSuccess[wechatConfigView](t, s.request(http.MethodPut, "platform.test", endpoint, s.platform.Token, body))
+		assertFailure(t, s.request(http.MethodPut, "platform.test", endpoint, s.platform.Token, body), 400)
 	}
 	assertFailure(t, s.request(http.MethodPut, "platform.test", endpoint, s.platform.Token, map[string]any{"app_id": "wx0000000000000002"}), 400)
-	read := s.request(http.MethodGet, "platform.test", endpoint, s.platform.Token, nil)
-	if strings.Contains(string(read.body), secret) || strings.Contains(string(read.body), "app_secret") {
-		t.Fatal("read response exposed stored credentials")
+	read := decodeSuccess[wechatConfigView](t, s.request(http.MethodGet, "platform.test", endpoint, s.platform.Token, nil))
+	if read != saved {
+		t.Fatal("configuration read did not return the saved credentials")
+	}
+	unchanged := decodeSuccess[wechatConfigView](t, s.request(http.MethodPut, "platform.test", endpoint, s.platform.Token, read))
+	if unchanged != read {
+		t.Fatal("saving the complete unchanged configuration altered credentials")
+	}
+	if err := s.pool.QueryRow(ctx, "SELECT app_secret,wechat_config_version FROM company WHERE id=$1", alpha.Tenant.ID).Scan(&stored, &version); err != nil {
+		t.Fatal(err)
+	}
+	if stored != secret || version != 1 {
+		t.Fatal("invalid input or unchanged save altered stored credentials or version")
 	}
 	other := decodeSuccess[wechatConfigView](t, s.request(http.MethodGet, "platform.test", "/api/platform/tenants/"+beta.Tenant.ID+"/wechat", s.platform.Token, nil))
-	if other.HasSecret {
+	if other.AppID != "" || other.AppSecret != "" {
 		t.Fatal("tenant configurations crossed scopes")
 	}
 	admin := s.login(t, "alpha.test", "tenant.admin", adminPassword)
 	assertFailure(t, s.request(http.MethodPut, "platform.test", endpoint, admin.Token, map[string]any{"app_id": saved.AppID, "app_secret": "forged"}), 401)
 	assertFailure(t, s.request(http.MethodGet, "alpha.test", endpoint, s.platform.Token, nil), 403)
 	assertFailure(t, s.request(http.MethodPost, "platform.test", "/api/platform/tenants", s.platform.Token, map[string]any{"name": "reserved", "hostname": "platform.localhost", "admin_username": "new.admin", "admin_password": adminPassword}), 400)
+}
+
+func TestSaaSWeChatUnchangedConfigurationKeepsInflightIdentity(t *testing.T) {
+	s := newIntegrationSuite(t)
+	alpha := s.createTenant(t, "alpha.test")
+	started := make(chan struct{})
+	resume := make(chan struct{})
+	configureWeChat(t, s, func(_ context.Context, c port.WeChatCredentials, code string) (port.WeChatIdentity, error) {
+		close(started)
+		<-resume
+		return port.WeChatIdentity{AppID: c.AppID, OpenID: "identity_" + code}, nil
+	})
+	endpoint := "/api/platform/tenants/" + alpha.Tenant.ID + "/wechat"
+	before := decodeSuccess[wechatConfigView](t, s.request(http.MethodGet, "platform.test", endpoint, s.platform.Token, nil))
+	result := make(chan apiResult, 1)
+	go func() {
+		result <- s.request(http.MethodPost, "alpha.test", "/api/auth/wechat/login", "", map[string]any{"code": "unchanged_snapshot"})
+	}()
+	t.Cleanup(func() {
+		select {
+		case <-resume:
+		default:
+			close(resume)
+		}
+	})
+	select {
+	case <-started:
+	case <-time.After(5 * time.Second):
+		t.Fatal("login did not reach upstream")
+	}
+	decodeSuccess[wechatConfigView](t, s.request(http.MethodPut, "platform.test", endpoint, s.platform.Token, before))
+	close(resume)
+	select {
+	case value := <-result:
+		assertLogin(t, decodeSuccess[loginView](t, value))
+	case <-time.After(5 * time.Second):
+		t.Fatal("login did not finish after unchanged configuration save")
+	}
+	if s.count(t, "SELECT wechat_config_version FROM company WHERE id=$1", alpha.Tenant.ID) != 1 || s.count(t, "SELECT count(*) FROM users WHERE open_id<>''") != 1 {
+		t.Fatal("unchanged configuration invalidated the login snapshot")
+	}
 }
 
 func TestSaaSWeChatConfigurationRotationRejectsInflightIdentity(t *testing.T) {

@@ -1,6 +1,6 @@
 # SaaS 设计与接口
 
-当前实现平台、企业、账号与会话管理。知识库、RAG、聊天、模型及向量数据库配置尚未设计，不在本次代码或数据库结构中预留。
+本文说明平台、企业、账号与登录会话管理。文档知识库与聊天复用此身份基座，模型及向量连接由企业管理员在页面配置，见 [知识库与聊天说明](knowledge.md)。FAQ、公有／私有及小程序知识库入口尚未实现。
 
 ## 业务规则
 
@@ -11,7 +11,7 @@
 - 用户可修改昵称、头像和密码，用户名不可修改，不提供物理删除入口。小程序提供微信头像选择与昵称填写能力，头像上传后持久保存。
 - 微信登录即登录／注册，首次自动创建本企业普通成员；后续恢复同一成员，不增加强制完善资料步骤。
 - 微信身份按企业、AppID、OpenID 关联账号，不使用昵称或头像合并现有用户名账号。首次创建使用每账号独立随机初始密码，只保存散列；小程序设置页验证新微信 code 后可设置新密码，复登不覆盖密码。
-- 平台在企业管理中维护该企业的 AppID、AppSecret；配置直接保存在 `company.app_id / app_secret`，AppSecret 为数据库明文，运行时动态读取。没有独立配置表或微信启用开关，企业换域名保留配置。接口仅返回 AppID 与密钥是否已配置，不回传 AppSecret。
+- 平台在企业管理中维护该企业的 AppID、AppSecret；配置直接保存在 `company.app_id / app_secret`，AppSecret 为数据库明文，运行时动态读取。没有独立配置表或微信启用开关，企业换域名保留配置。平台授权配置接口返回 AppID 与 AppSecret 原值，保存完整提交两项有效值，不继承旧密钥。
 - 停用、密码变更、密码重置或权限变化会撤销相应会话；重新启用不能恢复旧令牌。
 
 ## SaaS 架构
@@ -47,9 +47,9 @@ flowchart TB
 
 物理表名采用 `company / users / super_admin / auth_sessions`。业务层仍使用 tenant 表达租户，`users.tenant_id` 与企业会话的 `tenant_id` 逻辑关联 `company.id`；HTTP 路径、DTO 名称和字段保留现有 tenant 契约。微信身份直接保存在用户的 `wechat_app_id / open_id`，不再使用独立映射表。
 
-微信登录链路为 `uni.login → 临时 code → 本企业 API → 微信身份验证 → 本企业用户 → SaaS Bearer 会话`。AppSecret 只在服务端使用，微信 `session_key` 不下发客户端；后续业务请求统一使用本系统令牌。
+微信登录链路为 `uni.login → 临时 code → 本企业 API → 微信身份验证 → 本企业用户 → SaaS Bearer 会话`。微信验证由服务端使用 AppSecret；仅平台授权配置接口回显它，公共站点、用户资料和微信登录接口不返回 AppSecret，微信临时 `session_key` 也不下发客户端；后续业务请求统一使用本系统令牌。
 
-当前运行链路使用 PostgreSQL，上传对象可选择本地文件或 S3 兼容存储（包括 MinIO）。Redis、WeKnora 与 anything-llm 尚未接入。知识库、RAG、聊天等能力不属于当前实现。
+当前运行链路使用 PostgreSQL，上传对象可选择本地文件或 S3 兼容存储（包括 MinIO）。React 已接入知识库、RAG 和聊天，复用 WeKnora 切分实现并参考 AnythingLLM 配置与对话交互；未运行这两个示例项目的完整服务，也未引入 Redis。知识处理及聊天在独立能力模块中消费现有 SaaS 身份。
 
 ## 实现结构
 
@@ -109,7 +109,7 @@ React Router 管理 URL，导航、刷新、直接访问与浏览器前进后退
 - `Authorization: Bearer <token>`。随机令牌只在签发时返回，数据库仅存 SHA256 摘要。会话绝对有效期为 7 天。
 - 写入 JSON 必须是单个对象，最大 16 KiB；拒绝未知字段和字段 `null`。部分更新至少提供一个可写字段，缺省保留，显式空字符串按字段规则处理。
 - 用户名为 3–64 个 ASCII 字母、数字、下划线、点或横线，统一小写。密码按 UTF-8 校验 10–72 字节，不做 trim。昵称最多 64 个 Unicode 字符；头像为空、本用户已上传的受控相对路径或 HTTP(S) 地址，最多 2048 字节。
-- 状态为 `active / disabled`，角色为 `admin / user`。仅服务端可写密码散列和身份归属，公开响应不包含秘密。
+- 状态为 `active / disabled`，角色为 `admin / user`。仅服务端可写密码散列和身份归属，账号响应不包含密码散列或微信临时 session_key；已授权配置接口按其契约返回相应凭据，不扩大接口权限。
 - 搜索分页为 `?q=&page=1&page_size=20`，page_size 最大 100。结果为 `{items:[],total:0,page:1,page_size:20}`。
 - 错误按无效输入 400、认证失效 401、权限不足或停用 403、记录不存在 404、业务冲突 409、基础设施故障 500 区分。数据库故障不能当作账号失效；微信上游错误另按微信接口契约映射。
 
@@ -162,10 +162,10 @@ Web 与小程序均使用同一 PUT 资料接口，保存完整资料。企业�
 | POST `/platform/tenants` | name、hostname、admin_username、admin_password | `{tenant,user}` |
 | PATCH `/platform/tenants/:id` | name、hostname、status 至少一项 | Tenant |
 | POST `/platform/tenants/:id/reset-admin-password` | username、new_password | `{ok:true}`，重置现有企业管理员并撤销会话 |
-| GET `/platform/tenants/:id/wechat` | 平台 Bearer | `{app_id,has_secret}`，不返回密钥 |
-| PUT `/platform/tenants/:id/wechat` | app_id、可选 app_secret；首次或换 AppID 必须提供密钥 | `{app_id,has_secret}` |
+| GET `/platform/tenants/:id/wechat` | 平台 Bearer | `{app_id,app_secret}`，返回当前配置原值 |
+| PUT `/platform/tenants/:id/wechat` | 平台 Bearer；app_id、app_secret 两项必填，缺失或空值拒绝 | `{app_id,app_secret}`，返回已保存原值 |
 
-小程序配置没有启用字段。同一 AppID 的密钥缺省或空字符串表示保留；更换 AppID 必须提交新密钥，不继承旧小程序凭据。企业设置变更后配置仍归原企业；微信身份按 AppID 区分，不自动合并。
+小程序配置没有启用字段。保存按当前表单完整替换 AppID、AppSecret，不继承旧值；两项均按字段规则校验，缺省、null 或空字符串拒绝。后台读取用于原值回填，配置草稿不写入浏览器持久化或日志。企业设置变更后配置仍归原企业；微信身份按 AppID 区分，不自动合并。
 
 ## 事务、状态与运行
 

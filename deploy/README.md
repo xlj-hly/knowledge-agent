@@ -9,6 +9,8 @@ flowchart LR
     W -->|"/api 原路径、原 Host"| S["server：Go API"]
     S --> P[("配置的 PostgreSQL")]
     S --> O["配置的 S3 兼容对象存储"]
+    S --> M["企业页面配置的 LLM / Embedder"]
+    S --> V["企业页面配置的向量数据库"]
 ```
 
 同一份 Web 镜像服务所有企业域名，前端默认请求同源 `/api`，无需为每家企业重新构建。企业身份仍由后端根据原始 Host 查询；客户端不能通过请求头指定企业。
@@ -80,7 +82,7 @@ server 的健康检查调用 `/api/health`，验证进程和数据库，不代�
 | 本地地址 | 用途 |
 | --- | --- |
 | `http://platform.localhost:8088/platform` | 平台管理入口 |
-| `http://alpha.localhost:8088/` | 企业 alpha 的账号、成员和设置 |
+| `http://alpha.localhost:8088/` | 企业 alpha 的聊天首页、知识库和设置 |
 | `http://beta.localhost:8088/` | 企业 beta，用于验证跨企业隔离 |
 
 微信真实登录及原生资料能力留到线上环境验证，本地先验收 Web 的企业、账号、权限、资料和会话流程。
@@ -91,14 +93,25 @@ server 的健康检查调用 `/api/health`，验证进程和数据库，不代�
 location / {
     proxy_pass http://127.0.0.1:8088;
     proxy_set_header Host $http_host;
-    client_max_body_size 3m;
-    proxy_read_timeout 35s;
+    client_max_body_size 11m;
+    proxy_read_timeout 150s;
+    proxy_buffering off;
 }
 ```
 
 网关位于另一容器时，需提供可达的网络路径并相应调整发布地址；默认的宿主机回环绑定不会向其他主机开放。
 
-Web 保留 `/api` 前缀及原始 Host，业务 API 不缓存，头像的 HEAD/Range 与后端缓存头正常传递。头像最大 2 MiB，代理放行 3 MiB 以容纳 multipart；普通 JSON 的 16 KiB 限制仍由后端执行。哈希静态资源长期缓存，index.html 每次重新验证，React Router 的页面刷新回退到 index.html；缺失 API 或 `/assets/` 资源不会回退成页面。
+Web 保留 `/api` 前缀及原始 Host，业务 API 不缓存，头像的 HEAD/Range 与后端缓存头正常传递。知识资料最大 10 MiB，代理放行 11 MiB 以容纳 multipart；头像仍由 API 限制为 2 MiB，普通 JSON 仍有独立读取上限。哈希静态资源长期缓存，index.html 每次重新验证，React Router 的页面刷新回退到 index.html；缺失 API 或 `/assets/` 资源不会回退成页面。
+
+## 知识库外部服务
+
+向量目录参考两个项目的页面选项提供 13 个远程引擎模块，连接字段由引擎定义，全部通过企业页面配置。向量引擎作为外部服务连接，不随本项目 Compose 启动；向量索引可重建，业务权威记录保存在 PostgreSQL，资料原件通过 S3 保存。
+
+企业管理员在“LLM 对话模型”“嵌入器 Embedder”“向量数据库”和“AI 默认设置”页面配置服务与新建模板，不写入前端环境变量或 Compose。服务商预设可填入地址和模型候选，也可以获取模型列表、实际测试调用及检测向量维度；预设不代表已经部署模型或拥有访问密钥。聊天需要在 LLM 模型列表启用一个可用模型；切换后所有新旧会话的下一条消息使用它，正在流式的请求保留开始时模型。关键词知识库可以直接处理资料，向量索引还需要真实 Embedder 与所选向量引擎。文件解析、格式限制和操作入口见 [知识库说明](../docs/knowledge.md)。这些服务独立部署，默认 Compose 仍只有 server 与 web。
+
+页面里的服务地址由 **server 容器**访问，同机服务使用 `host.docker.internal` 或已连通的容器 DNS；浏览器能访问某地址不代表 server 可达。已有授权配置接口返回模型 API Key、完整向量连接配置和平台微信 AppSecret，供表单原值回填；保存按提交完整替换，不继承旧凭据，空值按字段规则校验。它们不进入静态包、未授权公开接口、浏览器持久化或日志；部署数据库与 S3 凭据仍只由服务端使用。生成最多等待两分钟，Web 已关闭 SSE 代理缓冲并放宽读取超时；外部网关也须采用上面的流式转发配置。
+
+`db/saas.sql` 是当前完整结构，供空数据库初始化。已有库须先比对实际表结构，再执行对应的结构调整，不能重复导入完整 SQL，也不能只截取“新增表”：本次配置与聊天设计还涉及模型表重命名、知识库处理配置、分块标题上下文和旧向量清理记录的转换。升级时先停止 server，事务中完成结构调整，再启动新版本并验证健康状态和已有数据；不清空公司、账号、资料或对象存储。
 
 ## 改用文件存储
 
